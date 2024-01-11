@@ -1,13 +1,12 @@
 Name:           irqbalance
-Version:        1.9.0
+Version:        1.9.2
 Release:        3%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 
-License:        GPLv2
+License:        GPL-2.0-only
 Url:            https://github.com/Irqbalance/irqbalance
 Source0:        https://github.com/Irqbalance/irqbalance/archive/irqbalance-%{version}.tar.gz
-Source1:        irqbalance.sysconfig
 
 BuildRequires:  autoconf automake libtool libcap-ng
 BuildRequires:  glib2-devel pkgconf libcap-ng-devel
@@ -19,61 +18,47 @@ BuildRequires:  numactl-devel
 Requires: numactl-libs
 %endif
 
-%define _hardened_build 1
-
 ExcludeArch: s390 s390x
 
-Patch1: irqbalance-1.8.0-env-file-path.patch
-Patch2: 0001-get-irq-module-relationship-from-sys-bus-pci-driver.patch
-Patch3: 0002-check-whether-savedptr-is-NULL-before-invoking-strle.patch
-Patch4: 0003-add-meson.patch
-Patch5: 0004-Prepare-to-handle-thermal-event.patch
-Patch6: 0005-Implement-Netlink-helper-functions-to-subscribe-ther.patch
-Patch7: 0006-Handle-thermal-events-to-mask-CPUs.patch
-Patch8: 0007-add-keep_going-check-to-prevent-irqbalance-from-fail.patch
-Patch9: 0008-parse_proc_interrupts-fix-parsing-interrupt-counts.patch
-Patch10: 0009-irqbalance-ui-move-ASSIGNED-TO-CPUS-to-the-last-colu.patch
-Patch11: 0010-irqbalance-ui-can-t-change-window-when-in-editing-st.patch
-Patch12: 0011-fix-memory-leak-in-ui-ui.c.patch
-Patch13: 0012-irqbalance-ui-support-scroll-under-tui-mode-of-irqba.patch
-Patch14: 0013-irqbalance-ui-print-cpulist-in-SETUP-IRQS.patch
-Patch15: 0014-Improve-documentation-and-logging-for-banned-cpus.patch
-Patch16: 0001-irqbalance-ui-skip-in-parse_setup-to-avoid-coredump.patch
+Patch1: 0001-optimize-getting-cpu-number.patch
+Patch2: 0002-allow-AF_NETLINK-in-the-systemd-service-restrictions.patch
+Patch3: 0003-thermal-Fix-the-warning-message.patch
+Patch4: 0004-procinterrupts-Fix-IRQ-name-parsing-on-certain-arm64.patch
+Patch5: 0005-irqbalance-fix-memory-leak-in-irq-hotplug-path.patch
+Patch6: 0006-ui-do-not-force-black-background.patch
+Patch7: 0007-thermal-Fix-log-message-for-perf-and-efficiency.patch
+Patch8: 0008-fix-CPU-number-condition-in-service-file.patch
+Patch9: 0009-Issue-259-select-NL_SKIP-NL_STOP-based-on-error.patch
+Patch10: 0010-Revert-Fix-CPU-number-condition-in-service-file.patch
+Patch11: 0011-Fix-signedness-of-error-handling.patch
+Patch12: 0012-Fix-it-so-we-actually-stop-when-we-hit-an-interrupt-.patch
+Patch13: 0013-procinterrupts-fix-initialisation-of-regex_t-struct.patch
+Patch14: irqbalance-1.9.0-environment-file-sysconfig.patch
+Patch15: 0001-activate_mapping-fflush-the-buffered-data-to-smp_aff.patch
+Patch16: 0002-Revert-activate_mapping-fflush-the-buffered-data-to-.patch
+Patch17: 0003-activate_mapping-avoid-use-after-free-when-affinity-.patch
+Patch18: 0004-activate_mapping-make-sure-to-catch-all-errors.patch
+Patch19: 0005-activate_mapping-report-error-reason.patch
+Patch20: 0006-activate_mapping-only-blacklist-irq-if-error-is-cons.patch
+Patch21: 0007-activate_mapping-avoid-logging-error-when-there-is-n.patch
 
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
 multiple CPUs for enhanced performance.
 
 %prep
-%setup -q
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
+%autosetup -p1
 
 %build
 ./autogen.sh
 %configure
-CFLAGS="%{optflags}" make %{?_smp_mflags}
+%{make_build}
 
 %install
 install -D -p -m 0755 %{name} %{buildroot}%{_sbindir}/%{name}
 install -D -p -m 0755 %{name}-ui %{buildroot}%{_sbindir}/%{name}-ui
 install -D -p -m 0644 ./misc/irqbalance.service %{buildroot}/%{_unitdir}/irqbalance.service
-install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
-
+install -D -p -m 0644 ./misc/irqbalance.env %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 install -d %{buildroot}%{_mandir}/man1/
 install -p -m 0644 ./irqbalance.1 %{buildroot}%{_mandir}/man1/
 
@@ -97,13 +82,21 @@ make check
 %postun
 %systemd_postun_with_restart irqbalance.service
 
-%triggerun -- irqbalance < 2:0.56-3
-if /sbin/chkconfig --level 3 irqbalance ; then
-    /bin/systemctl enable irqbalance.service >/dev/null 2>&1 || :
-fi
-/sbin/chkconfig --del irqbalance >/dev/null 2>&1 || :
-
 %changelog
+* Fri Jul 28 2023 Tao Liu <ltao@redhat.com> - 2:1.9.2-3
+- Use misc/irqbalance.env as irqbalance.sysconfig
+- Use new rpm macros: autosetup and make_build
+- Use irqbalance-1.9.0-environment-file
+- Remove _hardened_build
+- Remove triggerun -- irqbalance < 2:0.56-3
+- Use SPDX licence
+
+* Tue Jul 18 2023 Tao Liu <ltao@redhat.com> - 2:1.9.2-2
+- Rebase to latest upstream commit (50699824c7)
+
+* Thu May 18 2023 Tao Liu <ltao@redhat.com> - 2:1.9.2-1
+- Rebase to latest upstream commit (184c95029e)
+
 * Tue Jul 19 2022 Tao Liu <ltao@redhat.com> - 2:1.9.0-3
 - Rebase to latest upstream commit (c8d1fff0f1)
 
