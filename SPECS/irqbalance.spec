@@ -1,6 +1,6 @@
 Name:           irqbalance
-Version:        1.9.0
-Release:        4%{?dist}
+Version:        1.9.2
+Release:        1%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 
@@ -24,22 +24,20 @@ Requires: numactl-libs
 ExcludeArch: s390 s390x
 
 Patch1: irqbalance-1.8.0-env-file-path.patch
-Patch2: 0001-get-irq-module-relationship-from-sys-bus-pci-driver.patch
-Patch3: 0002-check-whether-savedptr-is-NULL-before-invoking-strle.patch
-Patch4: 0003-add-meson.patch
-Patch5: 0004-Prepare-to-handle-thermal-event.patch
-Patch6: 0005-Implement-Netlink-helper-functions-to-subscribe-ther.patch
-Patch7: 0006-Handle-thermal-events-to-mask-CPUs.patch
-Patch8: 0007-add-keep_going-check-to-prevent-irqbalance-from-fail.patch
-Patch9: 0008-parse_proc_interrupts-fix-parsing-interrupt-counts.patch
-Patch10: 0009-irqbalance-ui-move-ASSIGNED-TO-CPUS-to-the-last-colu.patch
-Patch11: 0010-irqbalance-ui-can-t-change-window-when-in-editing-st.patch
-Patch12: 0011-fix-memory-leak-in-ui-ui.c.patch
-Patch13: 0012-irqbalance-ui-support-scroll-under-tui-mode-of-irqba.patch
-Patch14: 0013-irqbalance-ui-print-cpulist-in-SETUP-IRQS.patch
-Patch15: 0014-Improve-documentation-and-logging-for-banned-cpus.patch
-Patch16: 0001-irqbalance-ui-skip-in-parse_setup-to-avoid-coredump.patch
-Patch17: 0001-revert-Confine-irqbalance-to-systems-where-it-is-useful.patch
+Patch2: 0001-optimize-getting-cpu-number.patch
+Patch3: 0002-allow-AF_NETLINK-in-the-systemd-service-restrictions.patch
+Patch4: 0003-thermal-Fix-the-warning-message.patch
+Patch5: 0004-procinterrupts-Fix-IRQ-name-parsing-on-certain-arm64.patch
+Patch6: 0005-irqbalance-fix-memory-leak-in-irq-hotplug-path.patch
+Patch7: 0006-ui-do-not-force-black-background.patch
+Patch8: 0007-thermal-Fix-log-message-for-perf-and-efficiency.patch
+Patch9: 0008-fix-CPU-number-condition-in-service-file.patch
+Patch10: 0009-Issue-259-select-NL_SKIP-NL_STOP-based-on-error.patch
+Patch11: 0010-Revert-Fix-CPU-number-condition-in-service-file.patch
+Patch12: 0011-Fix-signedness-of-error-handling.patch
+Patch13: 0012-Fix-it-so-we-actually-stop-when-we-hit-an-interrupt-.patch
+Patch14: 0013-procinterrupts-fix-initialisation-of-regex_t-struct.patch
+Patch15: 0001-revert-Confine-irqbalance-to-systems-where-it-is-useful.patch
 
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
@@ -62,8 +60,6 @@ multiple CPUs for enhanced performance.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
-%patch16 -p1
-%patch17 -p1
 
 %build
 ./autogen.sh
@@ -106,6 +102,9 @@ fi
 /sbin/chkconfig --del irqbalance >/dev/null 2>&1 || :
 
 %changelog
+* Thu May 18 2023 Tao Liu <ltao@redhat.com> - 2:1.9.2-1
+- Rebase to latest upstream commit (184c95029e)
+
 * Tue Jul 19 2022 Tao Liu <ltao@redhat.com> - 2:1.9.0-4
 - revert Confine irqbalance to systems where it is useful (bz2115230)
 
