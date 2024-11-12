@@ -18,9 +18,8 @@ index 0f79c3e..9bc63b6 100644
 -EnvironmentFile=-/usr/lib/irqbalance/defaults.env
 -EnvironmentFile=-/path/to/irqbalance.env
 +EnvironmentFile=-/etc/sysconfig/irqbalance
- ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
- ReadOnlyPaths=/
- ReadWritePaths=/proc/irq
+ ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
+ CapabilityBoundingSet=
+ NoNewPrivileges=yes
 -- 
 2.37.1
-

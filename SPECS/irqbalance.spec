@@ -1,6 +1,6 @@
 Name:           irqbalance
-Version:        1.9.2
-Release:        3%{?dist}
+Version:        1.9.4
+Release:        1%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 
@@ -10,7 +10,7 @@ Source0:        https://github.com/Irqbalance/irqbalance/archive/irqbalance-%{ve
 
 BuildRequires:  autoconf automake libtool libcap-ng
 BuildRequires:  glib2-devel pkgconf libcap-ng-devel
-BuildRequires:  systemd ncurses-devel
+BuildRequires:  systemd ncurses-devel systemd-devel
 BuildRequires:  make
 Requires: ncurses-libs
 %ifnarch %{arm}
@@ -20,27 +20,10 @@ Requires: numactl-libs
 
 ExcludeArch: s390 s390x
 
-Patch1: 0001-optimize-getting-cpu-number.patch
-Patch2: 0002-allow-AF_NETLINK-in-the-systemd-service-restrictions.patch
-Patch3: 0003-thermal-Fix-the-warning-message.patch
-Patch4: 0004-procinterrupts-Fix-IRQ-name-parsing-on-certain-arm64.patch
-Patch5: 0005-irqbalance-fix-memory-leak-in-irq-hotplug-path.patch
-Patch6: 0006-ui-do-not-force-black-background.patch
-Patch7: 0007-thermal-Fix-log-message-for-perf-and-efficiency.patch
-Patch8: 0008-fix-CPU-number-condition-in-service-file.patch
-Patch9: 0009-Issue-259-select-NL_SKIP-NL_STOP-based-on-error.patch
-Patch10: 0010-Revert-Fix-CPU-number-condition-in-service-file.patch
-Patch11: 0011-Fix-signedness-of-error-handling.patch
-Patch12: 0012-Fix-it-so-we-actually-stop-when-we-hit-an-interrupt-.patch
-Patch13: 0013-procinterrupts-fix-initialisation-of-regex_t-struct.patch
-Patch14: irqbalance-1.9.0-environment-file-sysconfig.patch
-Patch15: 0001-activate_mapping-fflush-the-buffered-data-to-smp_aff.patch
-Patch16: 0002-Revert-activate_mapping-fflush-the-buffered-data-to-.patch
-Patch17: 0003-activate_mapping-avoid-use-after-free-when-affinity-.patch
-Patch18: 0004-activate_mapping-make-sure-to-catch-all-errors.patch
-Patch19: 0005-activate_mapping-report-error-reason.patch
-Patch20: 0006-activate_mapping-only-blacklist-irq-if-error-is-cons.patch
-Patch21: 0007-activate_mapping-avoid-logging-error-when-there-is-n.patch
+Patch1: irqbalance-1.9.0-environment-file-sysconfig.patch
+Patch2: 0001-irqbalance-ui-check-if-using-a-negative-index-of-buf.patch
+Patch3: 0002-Check-fflush-return-value.patch
+Patch4: 0003-Drop-ProtectKernelTunables.patch
 
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
@@ -51,7 +34,7 @@ multiple CPUs for enhanced performance.
 
 %build
 ./autogen.sh
-%configure
+%configure --with-systemd
 %{make_build}
 
 %install
@@ -83,6 +66,9 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
+* Wed May 01 2024 Tao Liu <ltao@redhat.com> - 2:1.9.4-1
+- Rebase to upstream commit (f2c8309a41)
+
 * Fri Jul 28 2023 Tao Liu <ltao@redhat.com> - 2:1.9.2-3
 - Use misc/irqbalance.env as irqbalance.sysconfig
 - Use new rpm macros: autosetup and make_build
