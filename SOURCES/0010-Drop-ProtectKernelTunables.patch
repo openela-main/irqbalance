@@ -1,7 +1,7 @@
 From f2c8309a4198d8f51069a783905049c5b7eb7600 Mon Sep 17 00:00:00 2001
 From: Neil Horman <nhorman@openssl.org>
 Date: Mon, 1 Apr 2024 08:05:14 -0400
-Subject: [PATCH 3/3] Drop ProtectKernelTunables
+Subject: [PATCH 10/44] Drop ProtectKernelTunables
 
 It makes /proc/irq read only
 ---
@@ -21,5 +21,5 @@ index 87e19c1..b731cc6 100644
  ProtectKernelLogs=yes 
  ProtectControlGroups=yes 
 -- 
-2.40.1
+2.47.0
 

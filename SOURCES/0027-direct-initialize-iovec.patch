@@ -1,0 +1,31 @@
+From d36ae562c668c25d737b90c4ca1a84d8e9079712 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 4 Jul 2024 14:04:14 -0700
+Subject: [PATCH 27/44] direct initialize iovec
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/irqbalance-ui.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/ui/irqbalance-ui.c b/ui/irqbalance-ui.c
+index 06f4602..2e6b7d3 100644
+--- a/ui/irqbalance-ui.c
++++ b/ui/irqbalance-ui.c
+@@ -118,9 +118,10 @@ try_again:
+ 	}
+ 
+ 	struct msghdr *msg = create_credentials_msg();
+-	struct iovec iov;
+-	iov.iov_base = (void *) string;
+-	iov.iov_len = strlen(string);
++	struct iovec iov = {
++		.iov_base = (void *) string,
++		.iov_len = strlen(string),
++	};
+ 	msg->msg_iov = &iov;
+ 	sendmsg(socket_fd, msg, 0);
+ 
+-- 
+2.47.0
+

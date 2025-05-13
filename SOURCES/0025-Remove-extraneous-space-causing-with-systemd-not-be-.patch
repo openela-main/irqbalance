@@ -1,0 +1,26 @@
+From 9851c8c9bf8de26295e633475d35e36ccbe93714 Mon Sep 17 00:00:00 2001
+From: Andrew Soknacki <6068404+Sout@users.noreply.github.com>
+Date: Thu, 20 Jun 2024 20:38:45 -0400
+Subject: [PATCH 25/44] Remove extraneous space causing --with-systemd not be
+ aligned
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 4718444..678f66e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -82,7 +82,7 @@ AS_IF(
+ AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
+ 
+ AC_ARG_WITH([systemd],
+-  [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
++  [AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
+ )
+ AS_IF(
+   [test "x$with_systemd" = xyes], [
+-- 
+2.47.0
+

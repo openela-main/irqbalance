@@ -1,0 +1,27 @@
+From 16564e3ced6517ddd15bbcfb84df704f7f614c3b Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 30 Jun 2024 17:26:11 -0700
+Subject: [PATCH 28/44] clang-tidy: add missing free
+
+Found with clang-analyzer-unix.Malloc
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/ui.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ui/ui.c b/ui/ui.c
+index c580f85..5401d02 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -112,6 +112,7 @@ int get_valid_sleep_input(int column_offest)
+ 		char *error;
+ 		new_sleep = strtol(input, &error, 10);
+ 		if((*error == '\0') && (new_sleep >= 1)) {
++			free(input);
+ 			break;
+ 		}
+ 		new_sleep = setup.sleep;
+-- 
+2.47.0
+

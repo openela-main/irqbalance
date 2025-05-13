@@ -1,0 +1,104 @@
+From 80a8aeb1dbb055bc1daa30e3bf8d80d5b07b33c7 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 31 Mar 2024 15:27:43 -0700
+Subject: [PATCH 13/44] ui: change void to char
+
+It ends up being treated as a char anyway.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/helpers.c | 2 +-
+ ui/helpers.h | 2 +-
+ ui/ui.c      | 8 ++++----
+ ui/ui.h      | 6 +++---
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/ui/helpers.c b/ui/helpers.c
+index 247f826..3b4c51f 100644
+--- a/ui/helpers.c
++++ b/ui/helpers.c
+@@ -117,7 +117,7 @@ void for_each_cpu(GList *list, void (*fp)(cpu_ban_t *cpu, void *data), void *dat
+ 	}
+ }
+ 
+-void for_each_int(GList *list, void (*fp)(int *number, void *data), void *data)
++void for_each_int(GList *list, void (*fp)(int *number, char *data), void *data)
+ {
+ 	GList *entry;
+ 	entry = g_list_first(list);
+diff --git a/ui/helpers.h b/ui/helpers.h
+index 922914b..176a8d3 100644
+--- a/ui/helpers.h
++++ b/ui/helpers.h
+@@ -16,7 +16,7 @@ char * hex_to_bitmap(char hex_digit);
+ gpointer copy_cpu_ban(gconstpointer src, gpointer data);
+ gpointer copy_irq(gconstpointer src, gpointer data);
+ void for_each_cpu(GList *list, void (*fp)(cpu_ban_t *cpu, void *data), void *data);
+-void for_each_int(GList *list, void (*fp)(int *number, void *data), void *data);
++void for_each_int(GList *list, void (*fp)(int *number, char *data), void *data);
+ void for_each_irq(GList *list, void (*fp)(irq_t *irq, void *data), void *data);
+ void for_each_node(GList *list, void (*fp)(cpu_node_t *node, void *data), void *data);
+ 
+diff --git a/ui/ui.c b/ui/ui.c
+index a107fb9..2695ef0 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -130,7 +130,7 @@ int get_valid_sleep_input(int column_offest)
+ 	return new_sleep;
+ }
+ 
+-void get_banned_cpu(int *cpu, void *data __attribute__((unused)))
++void get_banned_cpu(int *cpu, char *data __attribute__((unused)))
+ {
+ 	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
+ 	new->number = *cpu;
+@@ -188,9 +188,9 @@ void print_all_cpus(void)
+ 		max_offset = 0;
+ }
+ 
+-void add_banned_cpu(int *banned_cpu, void *data)
++void add_banned_cpu(int *banned_cpu, char *data)
+ {
+-	snprintf((char *)data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
++	snprintf(data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
+ }
+ 
+ void display_banned_cpus(void)
+@@ -369,7 +369,7 @@ static inline void bsnl_emit(char *buf, int buflen)
+ 		snprintf(buf + len, buflen - len, "%d-%d", rbot, rtop);
+ }
+ 
+-void copy_assigned_obj(int *number, void *data)
++void copy_assigned_obj(int *number, char *data)
+ {
+ 	if (rtop == -1) {
+ 		rbot = rtop = *number;
+diff --git a/ui/ui.h b/ui/ui.h
+index f3485d4..5fbdd7c 100644
+--- a/ui/ui.h
++++ b/ui/ui.h
+@@ -23,10 +23,10 @@ void show_footer(void);
+ char * check_control_in_sleep_input(int max_len, int column_offest, int line_offset);
+ int get_valid_sleep_input(int column_offest);
+ 
+-void get_banned_cpu(int *cpu, void *data);
++void get_banned_cpu(int *cpu, char *data);
+ void print_cpu_line(cpu_ban_t *cpu, void *data);
+ void print_all_cpus(void);
+-void add_banned_cpu(int *banned_cpu, void *data);
++void add_banned_cpu(int *banned_cpu, char *data);
+ void display_banned_cpus(void);
+ int toggle_cpu(GList *cpu_list, int cpu_number);
+ void get_new_cpu_ban_values(cpu_ban_t *cpu, void *data);
+@@ -34,7 +34,7 @@ void get_cpu(cpu_node_t *node, void *data);
+ void handle_sleep_setting(void);
+ void handle_cpu_banning(void);
+ 
+-void copy_assigned_obj(int *number, void *data);
++void copy_assigned_obj(int *number, char *data);
+ void print_assigned_objects_string(irq_t *irq, int *line_offset);
+ void print_irq_line(irq_t *irq, void *data);
+ void print_all_irqs(void);
+-- 
+2.47.0
+

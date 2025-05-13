@@ -1,0 +1,27 @@
+From 02f7c174f1dfb0699cec4078d90a93901556a0c1 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 1 Apr 2024 14:16:26 -0700
+Subject: [PATCH 19/44] clang-tidy: remove redundant declarations
+
+Found with readability-redundant-declaration
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/ui.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/ui/ui.h b/ui/ui.h
+index 5fbdd7c..e41ca24 100644
+--- a/ui/ui.h
++++ b/ui/ui.h
+@@ -11,7 +11,6 @@
+ #include "irqbalance-ui.h"
+ #include "helpers.h"
+ 
+-extern GList *tree;
+ extern setup_t setup;
+ 
+ extern int offset;
+-- 
+2.47.0
+

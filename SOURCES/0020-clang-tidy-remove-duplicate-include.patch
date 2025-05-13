@@ -1,0 +1,27 @@
+From e78ea2676fdb2754b58ddec3c88b185f1b0b9949 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 1 Apr 2024 14:18:35 -0700
+Subject: [PATCH 20/44] clang-tidy: remove duplicate include
+
+Found with readability-duplicate-include
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index ab4e448..870d7c0 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -26,7 +26,6 @@
+ #include <malloc.h>
+ #include <sys/time.h>
+ #include <syslog.h>
+-#include <unistd.h>
+ #include <signal.h>
+ #include <time.h>
+ #include <sys/types.h>
+-- 
+2.47.0
+

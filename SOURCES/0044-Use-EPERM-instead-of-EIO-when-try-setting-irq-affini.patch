@@ -1,0 +1,39 @@
+From 3685d33ea8b3fecb832efc646ac1d4ed3945ed71 Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Fri, 18 Oct 2024 11:25:44 +1300
+Subject: [PATCH 44/44] Use EPERM instead of EIO when try setting irq affinity
+ fails
+
+Kernel commit eb29369fa543e ("genirq/proc: Change the return value for
+set affinity permission error") changed the error number from EIO to
+EPERM when a specific irq failed to set affinity from userspace.
+
+In addition, users have complained about EIO is misleading when
+setting affinity fails, however it just meaning "user cannot set
+affinity", so EPERM is better for that.
+
+This patch will follow the kernel change, to unify the behaviour of
+irqbalance from the kernels which have not integrated the kernel
+commit mentioned above.
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+---
+ activate.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/activate.c b/activate.c
+index 10ad57d..59a2fce 100644
+--- a/activate.c
++++ b/activate.c
+@@ -95,6 +95,8 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
+ 	info->moved = 0; /*migration is done*/
+ 	return;
+ error:
++	/* Use EPERM as the explaination for EIO */
++	errsave = (errsave == EIO) ? EPERM : errsave;
+ 	log(TO_ALL, LOG_WARNING,
+ 		"Cannot change IRQ %i affinity: %s\n",
+ 		info->irq, strerror(errsave));
+-- 
+2.47.0
+

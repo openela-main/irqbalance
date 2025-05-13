@@ -1,0 +1,50 @@
+From ea733f46545116acd3693a76efb6713ba75c7d79 Mon Sep 17 00:00:00 2001
+From: Eli Schwartz <eschwartz93@gmail.com>
+Date: Mon, 1 Apr 2024 00:19:59 -0400
+Subject: [PATCH 08/44] meson: drop redundant install_man() options
+
+It is unnecessary to set the install directory for manpages, since meson
+infers this from the file extension and installs *.1 manpages to mandir
+in the man1 section for you.
+
+It is also unnecessary to tag them as "en" because that is the
+default... it is likewise unnecessary to tag them with manual file
+permissions since the default 644 permission is also the overridden one.
+
+Signed-off-by: Eli Schwartz <eschwartz93@gmail.com>
+---
+ meson.build | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 9abf2d1..2cd0a9e 100644
+--- a/meson.build
++++ b/meson.build
+@@ -36,12 +36,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
+     install: true,
+   )
+ 
+-  install_man(
+-    'irqbalance-ui.1',
+-    install_dir: get_option('mandir') + '/man1',
+-    install_mode: 'rw-r--r--',
+-    locale: 'en',
+-  )
++  install_man('irqbalance-ui.1')
+ endif
+ 
+ irqbalance_sources = [
+@@ -69,9 +64,4 @@ executable(
+   install: true,
+ )
+ 
+-install_man(
+-  'irqbalance.1',
+-  install_dir: get_option('mandir') + '/man1',
+-  install_mode: 'rw-r--r--',
+-  locale: 'en',
+-)
++install_man('irqbalance.1')
+-- 
+2.47.0
+

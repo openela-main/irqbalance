@@ -1,0 +1,71 @@
+From 122ae9e27078585e5c618bee6741f723c03f1aef Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 1 Apr 2024 13:56:46 -0700
+Subject: [PATCH 14/44] clang-tidy: don't assign in if
+
+Found with bugprone-assignment-in-if-condition
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ classify.c   | 17 +++++++++++------
+ irqbalance.c |  3 ++-
+ 2 files changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/classify.c b/classify.c
+index 1601a1e..df9c13c 100644
+--- a/classify.c
++++ b/classify.c
+@@ -200,25 +200,30 @@ static unsigned int read_pci_data(const char *devpath, const char* file)
+ /* Get pci information for IRQ classification */
+ static int get_pci_info(const char *devpath, struct pci_info *pci)
+ {
+-	unsigned int data = PCI_INVAL_DATA;
++	unsigned int data;
+ 
+-	if ((data = read_pci_data(devpath, "vendor")) == PCI_INVAL_DATA)
++	data = read_pci_data(devpath, "vendor");
++	if (data == PCI_INVAL_DATA)
+ 		return -ENODEV;
+ 	pci->vendor = (unsigned short)data;
+ 
+-	if ((data = read_pci_data(devpath, "device")) == PCI_INVAL_DATA)
++	data = read_pci_data(devpath, "device");
++	if (data == PCI_INVAL_DATA)
+ 		return -ENODEV;
+ 	pci->device = (unsigned short)data;
+ 
+-	if ((data = read_pci_data(devpath, "subsystem_vendor")) == PCI_INVAL_DATA)
++	data = read_pci_data(devpath, "subsystem_vendor");
++	if (data == PCI_INVAL_DATA)
+ 		return -ENODEV;
+ 	pci->sub_vendor = (unsigned short)data;
+ 
+-	if ((data = read_pci_data(devpath, "subsystem_device")) == PCI_INVAL_DATA)
++	data = read_pci_data(devpath, "subsystem_device");
++	if (data == PCI_INVAL_DATA)
+ 		return -ENODEV;
+ 	pci->sub_device = (unsigned short)data;
+ 
+-	if ((data = read_pci_data(devpath, "class")) == PCI_INVAL_DATA)
++	data = read_pci_data(devpath, "class");
++	if (data == PCI_INVAL_DATA)
+ 		return -ENODEV;
+ 	pci->class = data;
+ 
+diff --git a/irqbalance.c b/irqbalance.c
+index 373161f..a8c56c2 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -422,7 +422,8 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
+ 			log(TO_ALL, LOG_WARNING, "Connection couldn't be accepted.\n");
+ 			goto out;
+ 		}
+-		if ((recv_size = recvmsg(sock, &msg, 0)) < 0) {
++		recv_size = recvmsg(sock, &msg, 0);
++		if (recv_size < 0) {
+ 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
+ 			goto out_close;
+ 		}
+-- 
+2.47.0
+

@@ -1,0 +1,314 @@
+From a7cfbeb0a6609dd56507c129ea2163816c4a4a5f Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 30 Jun 2024 16:49:20 -0700
+Subject: [PATCH 31/44] use g_malloc and friends
+
+These should not fail. There are no null checks.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c       |  4 ++--
+ ui/helpers.c       |  6 ++---
+ ui/irqbalance-ui.c | 57 ++++++++++++++++++++--------------------------
+ ui/ui.c            | 17 +++++++-------
+ 4 files changed, 38 insertions(+), 46 deletions(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index dfd5d2d..3875d5d 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -409,7 +409,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
+ 	struct msghdr msg = {
+ 		.msg_iov = &iov,
+ 		.msg_iovlen = 1,
+-		.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred))),
++		.msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred))),
+ 		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
+ 	};
+ 
+@@ -540,7 +540,7 @@ out_close:
+ 	}
+ 
+ out:
+-	free(msg.msg_control);
++	g_free(msg.msg_control);
+ 	return TRUE;
+ }
+ 
+diff --git a/ui/helpers.c b/ui/helpers.c
+index 3b4c51f..529b1b3 100644
+--- a/ui/helpers.c
++++ b/ui/helpers.c
+@@ -73,7 +73,7 @@ char * hex_to_bitmap(char hex_digit) {
+ 		return "0000\0";
+ 	}
+ 
+-	char *bitmap = malloc(5 * sizeof(char));
++	char *bitmap = g_malloc_n(5, sizeof(char));
+ 	bitmap[4] = '\0';
+ 	int i;
+ 	for(i = 3; i >= 0; i--) {
+@@ -86,7 +86,7 @@ char * hex_to_bitmap(char hex_digit) {
+ gpointer copy_cpu_ban(gconstpointer src, gpointer data __attribute__((unused)))
+ {
+ 	cpu_ban_t *old = (cpu_ban_t *)src; 
+-	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
++	cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
+ 	new->number = old->number;
+ 	new->is_banned = old->is_banned;
+ 	new->is_changed = 0;
+@@ -96,7 +96,7 @@ gpointer copy_cpu_ban(gconstpointer src, gpointer data __attribute__((unused)))
+ gpointer copy_irq(gconstpointer src, gpointer data __attribute__((unused)))
+ {
+ 	irq_t *old = (irq_t *)src; 
+-	irq_t *new = malloc(sizeof(irq_t));
++	irq_t *new = g_malloc(sizeof(irq_t));
+ 	new->vector = old->vector;
+ 	new->load = old->load;
+ 	new->diff = old->diff;
+diff --git a/ui/irqbalance-ui.c b/ui/irqbalance-ui.c
+index 2e6b7d3..9bb76fd 100644
+--- a/ui/irqbalance-ui.c
++++ b/ui/irqbalance-ui.c
+@@ -30,15 +30,14 @@ static int default_bufsz = 8192;
+ 
+ struct msghdr * create_credentials_msg(void)
+ {
+-	struct ucred *credentials = malloc(sizeof(struct ucred));
++	struct ucred *credentials = g_malloc(sizeof(struct ucred));
+ 	credentials->pid = getpid();
+ 	credentials->uid = geteuid();
+ 	credentials->gid = getegid();
+ 
+-	struct msghdr *msg = malloc(sizeof(struct msghdr));
+-	memset(msg, 0, sizeof(struct msghdr));
++	struct msghdr *msg = g_malloc0(sizeof(struct msghdr));
+ 	msg->msg_iovlen = 1;
+-	msg->msg_control = malloc(CMSG_SPACE(sizeof(struct ucred)));
++	msg->msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred)));
+ 	msg->msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+ 
+ 	struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
+@@ -47,7 +46,7 @@ struct msghdr * create_credentials_msg(void)
+ 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+ 	memcpy(CMSG_DATA(cmsg), credentials, sizeof(struct ucred));
+ 
+-	free(credentials);
++	g_free(credentials);
+ 	return msg;
+ }
+ 
+@@ -100,8 +99,8 @@ void send_settings(char *data)
+ 	sendmsg(socket_fd, msg, 0);
+ 
+ 	close(socket_fd);
+-	free(msg->msg_control);
+-	free(msg);
++	g_free(msg->msg_control);
++	g_free(msg);
+ }
+ 
+ char * get_data(char *string)
+@@ -125,20 +124,20 @@ try_again:
+ 	msg->msg_iov = &iov;
+ 	sendmsg(socket_fd, msg, 0);
+ 
+-	char *data = malloc(default_bufsz);
++	char *data = g_malloc(default_bufsz);
+ 	int len = recv(socket_fd, data, default_bufsz, MSG_TRUNC);
+ 	close(socket_fd);
+-	free(msg->msg_control);
+-	free(msg);
++	g_free(msg->msg_control);
++	g_free(msg);
+ 	if (len < 0) {
+-		free(data);
++		g_free(data);
+ 		return NULL;
+ 	}
+ 	data[len] = '\0';
+ 	if (len >= default_bufsz) {
+ 		/* msg was truncated, increase bufsz and try again */
+ 		default_bufsz += 8192;
+-		free(data);
++		g_free(data);
+ 		goto try_again;
+ 	}
+ 	return data;
+@@ -163,7 +162,7 @@ void parse_setup(char *setup_data)
+ 	token = strtok_r(NULL, " ", &ptr);
+ 	/* Parse banned IRQ data */
+ 	while(!strncmp(token, "IRQ", strlen("IRQ"))) {
+-		new_irq = malloc(sizeof(irq_t));
++		new_irq = g_malloc(sizeof(irq_t));
+ 		new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
+ 		token = strtok_r(NULL, " ", &ptr);
+ 		if(strncmp(token, "LOAD", strlen("LOAD")) != 0) goto out;
+@@ -189,26 +188,24 @@ void parse_setup(char *setup_data)
+ 		char *map = hex_to_bitmap(token[i]);
+ 		for(j = 3; j >= 0; j--) {
+ 			if(map[j] == '1') {
+-				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
++				uint64_t *banned_cpu = g_malloc(sizeof(uint64_t));
+ 				*banned_cpu = cpu;
+ 				setup.banned_cpus = g_list_append(setup.banned_cpus,
+ 								banned_cpu);
+ 			}
+ 			cpu++;
+ 		}
+-		free(map);
++		g_free(map);
+ 	
+ 	}
+-	free(copy);
++	g_free(copy);
+ 	return;
+ 
+ out: {
+ 	/* Invalid data presented */
+ 	printf("Invalid data sent.  Unexpected token: %s", token);
+-	if (new_irq) {
+-		free(new_irq);
+-	}
+-	free(copy);
++	g_free(new_irq);
++	g_free(copy);
+ 	g_list_free(tree);
+ 	exit(1);
+ }
+@@ -252,7 +249,7 @@ void assign_cpu_lists(cpu_node_t *node, void *data __attribute__((unused)))
+ 
+ void assign_cpu_mask(cpu_node_t *node, void *data __attribute__((unused)))
+ {
+-	char *mask = malloc(16 * sizeof(char));
++	char *mask = g_malloc_n(16, sizeof(char));
+ 	mask[0] = '\0';
+ 	unsigned int sum = 0;
+ 	GList *list_entry = g_list_first(node->cpu_list);
+@@ -281,7 +278,7 @@ void parse_into_tree(char *data)
+ 	if (!data || strlen(data) == 0)
+ 		return;
+ 
+-	copy = strdup(data);
++	copy = g_strdup(data);
+ 	if (!copy)
+ 		return;
+ 
+@@ -289,8 +286,8 @@ void parse_into_tree(char *data)
+ 	while(token != NULL) {
+ 		/* Parse node data */
+ 		if(strncmp(token, "TYPE", strlen("TYPE")) != 0) {
+-			free(copy);
+-			 goto out;
++			g_free(copy);
++			goto out;
+ 		}
+ 		new = g_malloc0(sizeof(cpu_node_t));
+ 		new->type = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
+@@ -312,7 +309,7 @@ void parse_into_tree(char *data)
+ 
+ 		/* Parse assigned IRQ data */
+ 		while((token != NULL) && (!strncmp(token, "IRQ", strlen("IRQ")))) {
+-			new_irq = malloc(sizeof(irq_t));
++			new_irq = g_malloc(sizeof(irq_t));
+ 			new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
+ 			token = strtok_r(NULL, " ", &ptr);
+ 			if(strncmp(token, "LOAD", strlen("LOAD")) != 0) goto out;
+@@ -343,7 +340,7 @@ void parse_into_tree(char *data)
+ 
+ 		new = NULL;
+ 	}
+-	free(copy);
++	g_free(copy);
+ 	for_each_node(tree, assign_cpu_lists, NULL);
+ 	for_each_node(tree, assign_cpu_mask, NULL);
+ 	return;
+@@ -351,12 +348,8 @@ void parse_into_tree(char *data)
+ out: {
+ 	/* Invalid data presented */
+ 	printf("Invalid data sent.  Unexpected token: %s\n", token);
+-	if (new_irq) {
+-		free(new_irq);
+-	}
+-	if (new) {
+-		free(new);
+-	}
++	g_free(new_irq);
++	g_free(new);
+ 	g_list_free(tree);
+ 	exit(1);
+ }
+diff --git a/ui/ui.c b/ui/ui.c
+index 5401d02..be5df5e 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -51,7 +51,7 @@ void show_footer(void)
+ 
+ char * check_control_in_sleep_input(int max_len, int column_offest, int line_offset)
+ {
+-	char *input_to = malloc(max_len * sizeof(char));
++	char *input_to = g_malloc_n(max_len, sizeof(char));
+ 	int iteration = 0;
+ 	while(iteration < max_len) {
+ 		int new = getch();
+@@ -76,7 +76,7 @@ char * check_control_in_sleep_input(int max_len, int column_offest, int line_off
+ 			attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
+ 			break;
+ 		case 27:
+-			free(input_to);
++			g_free(input_to);
+ 			return NULL;
+ 		default:
+ 			input_to[iteration] = new;
+@@ -112,7 +112,7 @@ int get_valid_sleep_input(int column_offest)
+ 		char *error;
+ 		new_sleep = strtol(input, &error, 10);
+ 		if((*error == '\0') && (new_sleep >= 1)) {
+-			free(input);
++			g_free(input);
+ 			break;
+ 		}
+ 		new_sleep = setup.sleep;
+@@ -121,7 +121,7 @@ int get_valid_sleep_input(int column_offest)
+ 			"Invalid input: %s								",
+ 			input);
+ 		refresh();
+-		free(input);
++		g_free(input);
+ 	}
+ 
+ 	attrset(COLOR_PAIR(1));
+@@ -132,7 +132,7 @@ int get_valid_sleep_input(int column_offest)
+ 
+ void get_banned_cpu(int *cpu, char *data __attribute__((unused)))
+ {
+-	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
++	cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
+ 	new->number = *cpu;
+ 	new->is_banned = 1;
+ 	all_cpus = g_list_append(all_cpus, new);
+@@ -237,7 +237,7 @@ void get_new_cpu_ban_values(cpu_ban_t *cpu, void *data)
+ void get_cpu(cpu_node_t *node, void *data __attribute__((unused)))
+ {
+ 	if(node->type == OBJ_TYPE_CPU) {
+-		cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
++		cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
+ 		new->number = node->number;
+ 		new->is_banned = 0;
+ 		all_cpus = g_list_append(all_cpus, new);
+@@ -402,10 +402,9 @@ void get_irq_name(int end)
+ 	char buffer[128];
+ 
+ 	if (irq_name == NULL) {
+-		irq_name = malloc(sizeof(char *) * LINES);
++		irq_name = g_malloc_n(LINES, sizeof(char *));
+ 		for (i = 4; i < LINES; i++) {
+-			irq_name[i] = malloc(sizeof(char) * 50);
+-			memset(irq_name[i], 0, sizeof(char) * 50);
++			irq_name[i] = g_malloc0_n(50, sizeof(char));
+ 		}
+ 	}
+ 
+-- 
+2.47.0
+

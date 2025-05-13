@@ -1,0 +1,46 @@
+From 196385b63d1e4ac1431f39f7b02978c969f4ff21 Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Tue, 20 Aug 2024 16:46:38 +1200
+Subject: [PATCH 41/44] Add CAP_SETPCAP to CapabilityBoundingSet in
+ irqbalance.service
+
+A error message of 'libcap-ng used by "/usr/sbin/irqbalance" failed dropping
+bounding set due to not having CAP_SETPCAP in capng_apply' is noticed.
+
+Previously a similar issue[1] has been fixed by the following commit:
+
+    efab272 Drop CapabilityBoundingSet from irqbalance service
+    43751df drop NoNewPrivs from irqbalance service
+
+in which, CapabilityBoundingSet and NoNewPrivs parameters are dropped
+from the irqbalance.service, and get restored by the following commit
+later:
+
+    a99b604 Set additional systemd options for service
+
+So this patch will not do the dropping again, but add CAP_SETPCAP to
+CapabilityBoundingSet instead.
+
+[1]: https://github.com/Irqbalance/irqbalance/issues/182
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+---
+ misc/irqbalance.service | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/misc/irqbalance.service b/misc/irqbalance.service
+index b731cc6..7e0c5d8 100644
+--- a/misc/irqbalance.service
++++ b/misc/irqbalance.service
+@@ -9,7 +9,7 @@ ConditionCPUs=>1
+ EnvironmentFile=-/usr/lib/irqbalance/defaults.env
+ EnvironmentFile=-/path/to/irqbalance.env
+ ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
+-CapabilityBoundingSet=
++CapabilityBoundingSet=CAP_SETPCAP
+ NoNewPrivileges=yes
+ ProtectSystem=strict
+ ReadOnlyPaths=/
+-- 
+2.47.0
+

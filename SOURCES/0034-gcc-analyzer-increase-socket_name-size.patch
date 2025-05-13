@@ -1,0 +1,30 @@
+From 4d537284c8d272cf05a64ee8ba226dd54c496a55 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 4 Jul 2024 14:24:30 -0700
+Subject: [PATCH 34/44] gcc analyzer: increase socket_name size
+
+Now matches sun_path size.
+
+Found with -Wanalyzer-out-of-bounds
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index 0b77376..4f3b97d 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -70,7 +70,7 @@ unsigned long migrate_ratio = 0;
+ 
+ #ifdef HAVE_IRQBALANCEUI
+ int socket_fd;
+-char socket_name[64];
++char socket_name[108];
+ char *banned_cpumask_from_ui = NULL;
+ #endif
+ 
+-- 
+2.47.0
+

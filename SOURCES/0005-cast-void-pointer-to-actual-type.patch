@@ -1,0 +1,28 @@
+From f2aebffef0ad990daca4b04eab4900d757b85364 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 31 Mar 2024 15:01:38 -0700
+Subject: [PATCH 05/44] cast void pointer to actual type
+
+pointer arithmetic on void is a GNU extension.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/ui.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ui/ui.c b/ui/ui.c
+index 9fa990a..a107fb9 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -190,7 +190,7 @@ void print_all_cpus(void)
+ 
+ void add_banned_cpu(int *banned_cpu, void *data)
+ {
+-	snprintf(data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
++	snprintf((char *)data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
+ }
+ 
+ void display_banned_cpus(void)
+-- 
+2.47.0
+

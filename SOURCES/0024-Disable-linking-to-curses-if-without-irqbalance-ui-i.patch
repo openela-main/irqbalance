@@ -1,0 +1,43 @@
+From c90599b15e847d019f8d3058b5c9010d8919a786 Mon Sep 17 00:00:00 2001
+From: Andrew Soknacki <6068404+Sout@users.noreply.github.com>
+Date: Thu, 20 Jun 2024 20:38:45 -0400
+Subject: [PATCH 24/44] Disable linking to curses if --without-irqbalance-ui is
+ specified.
+
+---
+ configure.ac | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 7ec6060..4718444 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -38,12 +38,6 @@ AC_CHECK_LIB(m, floor)
+ PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
+ 
+ PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
+-AS_IF([test "x$has_ncursesw" = "xyes"], [
+-  AC_SUBST([NCURSESW_CFLAGS])
+-  AC_SUBST([NCURSESW_LIBS])
+-  LIBS="$LIBS $NCURSESW_LIBS"
+-  AC_SUBST([LIBS])
+-])
+ 
+ AC_CANONICAL_HOST
+ 
+@@ -78,6 +72,12 @@ AC_ARG_WITH([irqbalance-ui],
+ AS_IF(
+   [test "x$with_irqbalanceui" = "xyes"], [
+     AC_DEFINE([HAVE_IRQBALANCEUI], 1, [Build irqbalance ui component.])
++    AS_IF([test "x$has_ncursesw" = "xyes"], [
++        AC_SUBST([NCURSESW_CFLAGS])
++        AC_SUBST([NCURSESW_LIBS])
++        LIBS="$LIBS $NCURSESW_LIBS"
++        AC_SUBST([LIBS])
++   ])
+ ])
+ AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
+ 
+-- 
+2.47.0
+

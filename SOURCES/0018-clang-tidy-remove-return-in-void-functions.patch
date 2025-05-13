@@ -1,0 +1,36 @@
+From 9b1ced291f14debdae735723978ed5b44da9deee Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 1 Apr 2024 14:14:55 -0700
+Subject: [PATCH 18/44] clang-tidy: remove return in void functions
+
+Found with readability-redundant-control-flow
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ classify.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/classify.c b/classify.c
+index cc0200d..08340db 100644
+--- a/classify.c
++++ b/classify.c
+@@ -102,8 +102,6 @@ static void apply_pci_quirks(const struct pci_info *pci, int *irq_class)
+ 				break;
+ 		}
+ 	}
+-
+-	return;
+ }
+ 
+ /* Determin IRQ class based on PCI class code */
+@@ -283,7 +281,6 @@ static void add_banned_irq(int irq, GList **list)
+ 
+ 	*list = g_list_append(*list, new);
+ 	log(TO_CONSOLE, LOG_INFO, "IRQ %d was BANNED.\n", irq);
+-	return;
+ }
+ 
+ void add_cl_banned_irq(int irq)
+-- 
+2.47.0
+

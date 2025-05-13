@@ -1,0 +1,43 @@
+From 2ed4dd0233a6e070c7ad128594892510d28f2ea9 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 30 Jun 2024 17:14:55 -0700
+Subject: [PATCH 29/44] clang-tidy: don't assign in if
+
+Found with bugprone-assignment-in-if-condition
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index 64b41f7..dfd5d2d 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -654,13 +654,16 @@ int main(int argc, char** argv)
+ 		if (daemon(0,0))
+ 			exit(EXIT_FAILURE);
+ 		/* Write pidfile which can be used to avoid starting multiple instances */
+-		if (pidfile && (pidfd = open(pidfile,
+-			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+-			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
+-			char str[16];
+-			snprintf(str, sizeof(str), "%u\n", getpid());
+-			write(pidfd, str, strlen(str));
+-			close(pidfd);
++		if (pidfile) {
++			pidfd = open(pidfile,
++				O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
++				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
++			if (pidfd >= 0) {
++				char str[16];
++				snprintf(str, sizeof(str), "%u\n", getpid());
++				write(pidfd, str, strlen(str));
++				close(pidfd);
++			}
+ 		}
+ 	}
+ 
+-- 
+2.47.0
+

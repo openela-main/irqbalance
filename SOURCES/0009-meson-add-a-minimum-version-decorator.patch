@@ -1,0 +1,37 @@
+From 23c6da76e05bdd042e76c3df2b531190797760c4 Mon Sep 17 00:00:00 2001
+From: Eli Schwartz <eschwartz93@gmail.com>
+Date: Mon, 1 Apr 2024 00:28:35 -0400
+Subject: [PATCH 09/44] meson: add a minimum version decorator
+
+Indicate the minimum required version of meson. Version 0.47 (released
+March 2020) is needed regardless, since it provides the cross-platform
+curses dependency wrapper. This just lets meson know that, so it
+can:
+
+- warn you if you use features from newer versions you didn't intend to
+  use, which is a sign to either require a higher minimum or avoid the
+  new feature for maximal compatibility
+
+- error out if you have an older version of meson too old to build
+  correctly with
+
+Signed-off-by: Eli Schwartz <eschwartz93@gmail.com>
+---
+ meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/meson.build b/meson.build
+index 2cd0a9e..026c4c4 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,6 +1,7 @@
+ project('irqbalance', 'c',
+     version: '1.9.4',
+     default_options: ['warning_level=1'],
++    meson_version: '>=0.54.0',
+ )
+ 
+ cc = meson.get_compiler('c')
+-- 
+2.47.0
+

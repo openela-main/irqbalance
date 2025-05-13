@@ -1,0 +1,25 @@
+From 2860da404dea0fcfd404f56e546b90f8432176cf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Torsten=20St=C3=B6ter?= <torsten.stoeter@lin-magdeburg.de>
+Date: Fri, 12 Jul 2024 14:24:01 +0200
+Subject: [PATCH 39/44] Minor punctuation fix.
+
+---
+ irqbalance.1 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/irqbalance.1 b/irqbalance.1
+index 4c75362..a15fb63 100644
+--- a/irqbalance.1
++++ b/irqbalance.1
+@@ -51,7 +51,7 @@ Enables log output optimized for systemd-journal.
+ 
+ .TP
+ .B -p, --powerthresh=<threshold>
+-Set the threshold at which we attempt to move a CPU into powersave mode
++Set the threshold at which we attempt to move a CPU into powersave mode.
+ If more than <threshold> CPUs are more than 1 standard deviation below the
+ average CPU softirq workload, and no CPUs are more than 1 standard deviation
+ above (and have more than 1 IRQ assigned to them), attempt to place 1 CPU in
+-- 
+2.47.0
+
