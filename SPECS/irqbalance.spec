@@ -1,6 +1,6 @@
 Name:           irqbalance
 Version:        1.9.4
-Release:        2%{?dist}
+Release:        2%{?dist}.2
 Epoch:          2
 Summary:        IRQ balancing daemon
 
@@ -68,6 +68,9 @@ Patch45: 0044-Use-EPERM-instead-of-EIO-when-try-setting-irq-affini.patch
 Patch46: irqbalance-1.9.0-environment-file-sysconfig.patch
 Patch47: irqbalance-manual.patch
 
+Patch48: 0001-check_platform_device-Check-the-length-of-path.patch
+Patch49: 0001-Fix-the-wrong-string-existence-checking-condition.patch
+
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
 multiple CPUs for enhanced performance.
@@ -111,6 +114,12 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
+* Wed Jun 25 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-2.2
+- Bump up version number
+
+* Wed May 14 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-2.1
+- Release 1.9.4-2.1
+
 * Wed Nov 6 2024 Tao Liu <ltao@redhat.com> - 2:1.9.4-2
 - Release 1.9.4-2
 - Rebase to upstream commit (b4b6f194da)

@@ -1,0 +1,41 @@
+From ffa304a885fdafaf233510baa0017ceaa1349e96 Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Fri, 7 Mar 2025 16:08:47 +1300
+Subject: [PATCH] Fix the wrong string existence checking condition
+
+Commit da75aae4effd ("conver strncmp to g_str_has_prefix") introduced an error
+which reversed the string existence checking condition.
+
+Before that commit, the check condition is:
+  (strncmp(name, "Level", len) == 0 || strncmp(name, "Edge", len) == 0)
+
+After that commit, the check condition is equal to:
+  (strncmp(name, "Level", len) != 0 || strncmp(name, "Edge", len) != 0)
+
+This is unexpected and let's fixe this error.
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+---
+ procinterrupts.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/procinterrupts.c b/procinterrupts.c
+index e82fac7..8303ad3 100644
+--- a/procinterrupts.c
++++ b/procinterrupts.c
+@@ -172,9 +172,9 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
+ 		 * /proc/interrupts format defined, after of interrupt type
+ 		 * the reset string is mark the irq desc name.
+ 		 */
+-		if (!g_str_has_prefix(irq_name, "Level") ||
+-                                !g_str_has_prefix(irq_name, "Edge"))
+-                        break;
++		if (g_str_has_prefix(irq_name, "Level") ||
++				g_str_has_prefix(irq_name, "Edge"))
++			break;
+ #endif
+ 	}
+ 
+-- 
+2.47.0
+

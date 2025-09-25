@@ -1,0 +1,32 @@
+From d602002e1982a322d19034a4a64ca5a81bace7ef Mon Sep 17 00:00:00 2001
+From: Tao Liu <ltao@redhat.com>
+Date: Tue, 25 Feb 2025 16:35:34 +1300
+Subject: [PATCH] check_platform_device: Check the length of path
+
+The default length of path is 512, but the strcat() is used without
+check if path is overflowed, otherwise a segfault is observed on
+some aarch64 machines. This patch will use snprintf instead of strcat
+for the buffer length checking.
+
+Signed-off-by: Tao Liu <ltao@redhat.com>
+---
+ procinterrupts.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/procinterrupts.c b/procinterrupts.c
+index 4d04bf2..e82fac7 100644
+--- a/procinterrupts.c
++++ b/procinterrupts.c
+@@ -72,7 +72,8 @@ static int check_platform_device(char *name, struct irq_info *info)
+ 	memset(path, 0, 512);
+ 
+ 	strcat(path, "/sys/devices/platform/");
+-	strcat(path, name);
++	snprintf(path + strlen(path), sizeof(path) - strlen(path) - 1,
++		"%s", name);
+ 	strcat(path, "/");
+ 	dirfd = opendir(path);
+ 
+-- 
+2.47.0
+
