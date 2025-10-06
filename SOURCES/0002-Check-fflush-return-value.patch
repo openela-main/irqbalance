@@ -1,0 +1,41 @@
+From 8301666f3029ff4d9089a273a45ec47671d964c1 Mon Sep 17 00:00:00 2001
+From: Andrew Zaborowski <andrew.zaborowski@intel.com>
+Date: Fri, 29 Mar 2024 18:43:55 -0700
+Subject: [PATCH 2/3] Check fflush() return value
+
+Since fprintf() may buffer output, as noted in 470a64b19062, fclose()'s
+error value was also being checked for the write errors.  However in
+8d7c78304fb9 an fflush() was added in between meaning that these
+buffered write errors were again unchecked.  Some actual errors were
+not being logged, in my case -ENOSPCs.
+
+Make the fclose and fflush branches look similar.
+
+Fixes: 8d7c78304fb9 ("Flush file before closing")
+---
+ activate.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/activate.c b/activate.c
+index e30d0f0..0c1e7a1 100644
+--- a/activate.c
++++ b/activate.c
+@@ -82,10 +82,13 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
+ 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
+ 	ret = fprintf(file, "%s", buf);
+ 	errsave = errno;
+-	fflush(file);
++	if (ret >= 0 && fflush(file)) {
++		ret = -1;
++		errsave = errno;
++	}
+ 	if (fclose(file)) {
++		ret = -1;
+ 		errsave = errno;
+-		goto error;
+ 	}
+ 	if (ret < 0)
+ 		goto error;
+-- 
+2.40.1
+
