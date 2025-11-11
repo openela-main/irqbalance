@@ -1,0 +1,14 @@
+diff --git a/irqbalance.1 b/irqbalance.1
+index 05f7b48..ec6ace7 100644
+--- a/irqbalance.1
++++ b/irqbalance.1
+@@ -98,7 +98,8 @@ if a directory is specified, non-executable files will be skipped.
+ The script may specify zero or more key=value pairs that will guide irqbalance in
+ the management of that IRQ.  Key=value pairs are printed by the script on stdout
+ and will be captured and interpreted by irqbalance.  Irqbalance expects a zero
+-exit code from the provided utility.  Recognized key=value pairs are:
++exit code from the provided utility. "/usr/libexec/irqbalance" is a preferred dir for
++placing the scripts, otherwise it may encounter selinux issues if enabled.
+ .TP
+ .I ban=[true | false]
+ Directs irqbalance to exclude the passed in IRQ from balancing.

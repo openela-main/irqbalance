@@ -8,7 +8,7 @@ Subject: [PATCH] misc/irqbalance.service: Use sysconfig for EnvironmentFile
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/misc/irqbalance.service b/misc/irqbalance.service
-index 0f79c3e..9bc63b6 100644
+index 7e0c5d8..9ac430f 100644
 --- a/misc/irqbalance.service
 +++ b/misc/irqbalance.service
 @@ -6,8 +6,7 @@ ConditionVirtualization=!container
@@ -19,7 +19,5 @@ index 0f79c3e..9bc63b6 100644
 -EnvironmentFile=-/path/to/irqbalance.env
 +EnvironmentFile=-/etc/sysconfig/irqbalance
  ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
- CapabilityBoundingSet=
+ CapabilityBoundingSet=CAP_SETPCAP
  NoNewPrivileges=yes
--- 
-2.37.1

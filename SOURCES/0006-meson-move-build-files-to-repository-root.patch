@@ -1,0 +1,113 @@
+From 922ee47bbfb44a1ee7346f434092028adf4dffcd Mon Sep 17 00:00:00 2001
+From: Eli Schwartz <eschwartz93@gmail.com>
+Date: Mon, 1 Apr 2024 00:15:44 -0400
+Subject: [PATCH 06/44] meson: move build files to repository root
+
+Per the README and github ticket discussion, the purpose of having it in
+contrib/ is to gauge community interest. This interest has now been
+expressed by several parties, so that interest is certainly there.
+
+Let's move it to a more discoverable location. This has two benefits:
+
+- usability. If various parties intend to use it, then it is easier to
+  do so from the repository root rather than cd'ing into a subdir.
+
+- discoverability. At least Gentoo didn't initially realize it existed,
+  since it wasn't in the repository root, but switched after realizing.
+  It seems reasonable that other redistributors, too, would be
+  interested in evaluating its use but hadn't previously noticed the
+  option.
+
+Addresses: https://github.com/Irqbalance/irqbalance/pull/211#issuecomment-2028891561
+Signed-off-by: Eli Schwartz <eschwartz93@gmail.com>
+---
+ contrib/README                                |  2 --
+ contrib/meson.build => meson.build            | 30 +++++++++----------
+ .../meson_options.txt => meson_options.txt    |  0
+ 3 files changed, 15 insertions(+), 17 deletions(-)
+ delete mode 100644 contrib/README
+ rename contrib/meson.build => meson.build (85%)
+ rename contrib/meson_options.txt => meson_options.txt (100%)
+
+diff --git a/contrib/README b/contrib/README
+deleted file mode 100644
+index 2158dac..0000000
+--- a/contrib/README
++++ /dev/null
+@@ -1,2 +0,0 @@
+-This directory contains meson build instructions for irqbalance. This is here to see if there is any interest from
+-the general community.
+diff --git a/contrib/meson.build b/meson.build
+similarity index 85%
+rename from contrib/meson.build
+rename to meson.build
+index 0c74702..707baed 100644
+--- a/contrib/meson.build
++++ b/meson.build
+@@ -25,15 +25,15 @@ if cdata.get('HAVE_IRQBALANCEUI')
+ 
+   executable(
+     'irqbalance-ui',
+-    '../ui/helpers.c',
+-    '../ui/irqbalance-ui.c',
+-    '../ui/ui.c',
++    'ui/helpers.c',
++    'ui/irqbalance-ui.c',
++    'ui/ui.c',
+     dependencies: [glib_dep, ncurses_dep],
+     install: true,
+   )
+ 
+   install_man(
+-    '../irqbalance-ui.1',
++    'irqbalance-ui.1',
+     install_dir: get_option('mandir') + '/man1',
+     install_mode: 'rw-r--r--',
+     locale: 'en',
+@@ -41,20 +41,20 @@ if cdata.get('HAVE_IRQBALANCEUI')
+ endif
+ 
+ irqbalance_sources = [
+-  '../activate.c',
+-  '../bitmap.c',
+-  '../classify.c',
+-  '../cputree.c',
+-  '../irqbalance.c',
+-  '../irqlist.c',
+-  '../numa.c',
+-  '../placement.c',
+-  '../procinterrupts.c',
++  'activate.c',
++  'bitmap.c',
++  'classify.c',
++  'cputree.c',
++  'irqbalance.c',
++  'irqlist.c',
++  'numa.c',
++  'placement.c',
++  'procinterrupts.c',
+ ]
+ 
+ if libnl_3_dep.found() and libnl_genl_3_dep.found()
+   irqbalance_sources += [
+-    '../thermal.c',
++    'thermal.c',
+   ]
+ endif
+ 
+@@ -66,7 +66,7 @@ executable(
+ )
+ 
+ install_man(
+-  '../irqbalance.1',
++  'irqbalance.1',
+   install_dir: get_option('mandir') + '/man1',
+   install_mode: 'rw-r--r--',
+   locale: 'en',
+diff --git a/contrib/meson_options.txt b/meson_options.txt
+similarity index 100%
+rename from contrib/meson_options.txt
+rename to meson_options.txt
+-- 
+2.47.0
+

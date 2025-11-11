@@ -1,0 +1,195 @@
+From 54051449030cb3c1642f9a6110316d3705eb3a23 Mon Sep 17 00:00:00 2001
+From: Andrew Zaborowski <andrew.zaborowski@intel.com>
+Date: Fri, 10 May 2024 18:57:34 -0700
+Subject: [PATCH 23/44] Track IRQ "slots" count per CPU to avoid overflowing
+
+There are situations where irqbalance may try to migrate large numbers of
+IRQs to a topo_obj, there's no upper bound on the number as the
+placement logic is based on load mainly.  The kernel's irq bitmasks limit
+the number of IRQs on each cpu and if more are tried to be migrated, the
+write to smp_affinity returns -ENOSPC.  This confuses irqbalance's
+logic, the topo_obj.interrupts list no longer matches the irqs actually
+on that CPU or cache domain, and results in floods of error messages.
+See https://github.com/Irqbalance/irqbalance/issues/303 for details.
+
+For an easy fix, track the number of IRQ slots still free on each CPU.
+We start with INT_MAX meaning "unknown" and when we first get a -ENOSPC,
+we know we have no slots left.  From there update the slots count each
+time we migrate IRQs to/from the CPU core topo_obj.  We may never see an
+-ENOSPC and in that case there's no change in current logic, we never
+start tracking.
+
+This way we don't need to know ahead of time how many slots the kernel
+has for each CPU.  The number may be arch specific (it is about 200 on
+x86-64) and is dependent on the number managed IRQs kernel has
+registered, so we don't want to guess.  This is also more tolerant to
+the topo_obj.interrupts lists not matching exactly the kernel's idea of
+each irq's current affinity, e.g. due to -EIO errors in the smp_affinity
+writes.
+
+For now only do the tracking at OBJ_TYPE_CPU level so we don't have to
+update slots_left for all parent objs.
+
+Th commit doesn't try to stop an ongoing activation of all the IRQs
+already scheduled for moving to one cpu, when that cpu starts returning
+ENOSPC.  We'll still see a bunch of those errors in that iteration.
+But in subsequent calculate_placement() iterations we avoid assigning
+more IRQs to that cpu than we were able to successfully move before.
+---
+ activate.c   | 13 ++++++++++++-
+ classify.c   |  2 ++
+ cputree.c    | 10 ++++++++++
+ irqbalance.c |  3 +++
+ irqbalance.h |  1 +
+ irqlist.c    | 11 ++++++++++-
+ placement.c  |  3 +++
+ types.h      |  1 +
+ 8 files changed, 42 insertions(+), 2 deletions(-)
+
+diff --git a/activate.c b/activate.c
+index 0c1e7a1..10ad57d 100644
+--- a/activate.c
++++ b/activate.c
+@@ -99,7 +99,6 @@ error:
+ 		"Cannot change IRQ %i affinity: %s\n",
+ 		info->irq, strerror(errsave));
+ 	switch (errsave) {
+-	case ENOSPC: /* Specified CPU APIC is full. */
+ 	case EAGAIN: /* Interrupted by signal. */
+ 	case EBUSY: /* Affinity change already in progress. */
+ 	case EINVAL: /* IRQ would be bound to no CPU. */
+@@ -107,6 +106,18 @@ error:
+ 	case ENOMEM: /* Kernel cannot allocate CPU mask. */
+ 		/* Do not blacklist the IRQ on transient errors. */
+ 		break;
++	case ENOSPC: /* Specified CPU APIC is full. */
++		if (info->assigned_obj->obj_type != OBJ_TYPE_CPU)
++			break;
++
++		if (info->assigned_obj->slots_left > 0)
++			info->assigned_obj->slots_left = -1;
++		else
++			/* Negative slots to count how many we need to free */
++			info->assigned_obj->slots_left--;
++
++		force_rebalance_irq(info, NULL);
++		break;
+ 	default:
+ 		/* Any other error is considered permanent. */
+ 		info->level = BALANCE_NONE;
+diff --git a/classify.c b/classify.c
+index 08340db..69d72ac 100644
+--- a/classify.c
++++ b/classify.c
+@@ -883,6 +883,8 @@ static void remove_no_existing_irq(struct irq_info *info, void *data __attribute
+ 		entry = g_list_find_custom(info->assigned_obj->interrupts, info, compare_ints);
+ 	    if (entry) {
+ 			info->assigned_obj->interrupts = g_list_delete_link(info->assigned_obj->interrupts, entry);
++			/* Probe number of slots again, don't guess whether the IRQ left a free slot */
++			info->assigned_obj->slots_left = INT_MAX;
+ 		}
+ 	}
+ 	free_irq(info, NULL);
+diff --git a/cputree.c b/cputree.c
+index d66be55..6c7b3b4 100644
+--- a/cputree.c
++++ b/cputree.c
+@@ -595,3 +595,13 @@ int get_cpu_count(void)
+ 	return g_list_length(cpus);
+ }
+ 
++static void clear_obj_slots(struct topo_obj *d, void *data __attribute__((unused)))
++{
++	d->slots_left = INT_MAX;
++	for_each_object(d->children, clear_obj_slots, NULL);
++}
++
++void clear_slots(void)
++{
++	for_each_object(numa_nodes, clear_obj_slots, NULL);
++}
+diff --git a/irqbalance.c b/irqbalance.c
+index 7efbc98..1490336 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -298,6 +298,7 @@ gboolean scan(gpointer data __attribute__((unused)))
+ 		} while (need_rebuild);
+ 
+ 		for_each_irq(NULL, force_rebalance_irq, NULL);
++		clear_slots();
+ 		parse_proc_interrupts();
+ 		parse_proc_stat();
+ 		return TRUE;
+@@ -695,6 +696,8 @@ int main(int argc, char** argv)
+ 	parse_proc_interrupts();
+ 	parse_proc_stat();
+ 
++	clear_slots();
++
+ #ifdef HAVE_IRQBALANCEUI
+ 	if (init_socket()) {
+ 		ret = EXIT_FAILURE;
+diff --git a/irqbalance.h b/irqbalance.h
+index 76640dd..47e40cc 100644
+--- a/irqbalance.h
++++ b/irqbalance.h
+@@ -98,6 +98,7 @@ extern struct topo_obj *get_numa_node(int nodeid);
+ #define cpu_numa_node(cpu) ((cpu)->parent->numa_nodes)
+ extern struct topo_obj *find_cpu_core(int cpunr);
+ extern int get_cpu_count(void);
++extern void clear_slots(void);
+ 
+ /*
+  * irq db functions
+diff --git a/irqlist.c b/irqlist.c
+index 304b1c6..9483a11 100644
+--- a/irqlist.c
++++ b/irqlist.c
+@@ -211,8 +211,17 @@ void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info
+ 
+ 	migrate_irq(from_list, to_list, info);
+ 
+-	if (to)
++	if (from) {
++		if (from->slots_left != INT_MAX)
++			from->slots_left++;
++	}
++
++	if (to) {
++		if (to->slots_left != INT_MAX)
++			to->slots_left--;
++
+ 		to->load += info->load + 1;
++	}
+ 
+ 	info->assigned_obj = to;
+ }
+diff --git a/placement.c b/placement.c
+index f156e0e..3276dea 100644
+--- a/placement.c
++++ b/placement.c
+@@ -59,6 +59,9 @@ static void find_best_object(struct topo_obj *d, void *data)
+ 	if (d->powersave_mode)
+ 		return;
+ 
++	if (d->slots_left <= 0)
++		return;
++
+ 	newload = d->load;
+ 	if (newload < best->best_cost) {
+ 		best->best = d;
+diff --git a/types.h b/types.h
+index ea1fae8..5c66bf9 100644
+--- a/types.h
++++ b/types.h
+@@ -56,6 +56,7 @@ struct topo_obj {
+ 	GList *children;
+ 	GList *numa_nodes;
+ 	GList **obj_type_list;
++	int slots_left;
+ };
+ 
+ struct irq_info {
+-- 
+2.47.0
+

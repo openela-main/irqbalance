@@ -1,0 +1,32 @@
+From 8f575ec8bd70bd6895fc876d203ae28b7ab8c495 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 1 Apr 2024 14:04:46 -0700
+Subject: [PATCH 16/44] replace malloc with g_malloc0
+
+Aborts on failure. There's no null check.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/irqbalance-ui.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/ui/irqbalance-ui.c b/ui/irqbalance-ui.c
+index 581c110..06f4602 100644
+--- a/ui/irqbalance-ui.c
++++ b/ui/irqbalance-ui.c
+@@ -291,11 +291,7 @@ void parse_into_tree(char *data)
+ 			free(copy);
+ 			 goto out;
+ 		}
+-		new = malloc(sizeof(cpu_node_t));
+-		new->irqs = NULL;
+-		new->children = NULL;
+-		new->cpu_list = NULL;
+-		new->cpu_mask = NULL;
++		new = g_malloc0(sizeof(cpu_node_t));
+ 		new->type = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
+ 		if(new->type == OBJ_TYPE_NODE) {
+ 			parent = NULL;
+-- 
+2.47.0
+

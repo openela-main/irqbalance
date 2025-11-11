@@ -1,0 +1,26 @@
+From 2e1bf9022276fc8753595c2db24d184382ad4a7c Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 31 Mar 2024 15:00:44 -0700
+Subject: [PATCH 12/44] meson: use find_library for numa
+
+Older versions of numa do not come with a pkgconfig file.
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 90d6aac..d26ef42 100644
+--- a/meson.build
++++ b/meson.build
+@@ -10,7 +10,7 @@ glib_dep = dependency('glib-2.0')
+ m_dep = cc.find_library('m', required: false)
+ capng_dep = dependency('libcap-ng', required: get_option('capng'))
+ ncurses_dep = dependency('curses', required: get_option('ui'))
+-numa_dep = dependency('numa', required: get_option('numa'))
++numa_dep = cc.find_library('numa', required: get_option('numa'))
+ libnl_3_dep = dependency('libnl-3.0', required: get_option('thermal'))
+ libnl_genl_3_dep = dependency('libnl-genl-3.0', required: get_option('thermal'))
+ systemd_dep = dependency('libsystemd', required: get_option('systemd'))
+-- 
+2.47.0
+

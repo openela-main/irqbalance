@@ -1,7 +1,7 @@
 From 8301666f3029ff4d9089a273a45ec47671d964c1 Mon Sep 17 00:00:00 2001
 From: Andrew Zaborowski <andrew.zaborowski@intel.com>
 Date: Fri, 29 Mar 2024 18:43:55 -0700
-Subject: [PATCH 2/3] Check fflush() return value
+Subject: [PATCH 02/44] Check fflush() return value
 
 Since fprintf() may buffer output, as noted in 470a64b19062, fclose()'s
 error value was also being checked for the write errors.  However in
@@ -37,5 +37,5 @@ index e30d0f0..0c1e7a1 100644
  	if (ret < 0)
  		goto error;
 -- 
-2.40.1
+2.47.0
 

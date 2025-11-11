@@ -1,0 +1,42 @@
+From e39848bfe45ea580bc0fd3b966a4199fb2fcd5b8 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 4 Jul 2024 14:13:54 -0700
+Subject: [PATCH 33/44] gcc analyzer: add NULL checks
+
+Found with -Wanalyzer-null-argument
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c | 2 +-
+ ui/ui.c      | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index 3875d5d..0b77376 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -503,7 +503,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
+ 						recv_size - strlen("settings cpus "));
+ 				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
+ 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
+-				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
++				if (banned_cpumask_from_ui && !strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
+ 					banned_cpumask_from_ui = NULL;
+ 					free(cpu_ban_string);
+ 					cpu_ban_string = NULL;
+diff --git a/ui/ui.c b/ui/ui.c
+index be5df5e..8d7c493 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -418,6 +418,8 @@ void get_irq_name(int end)
+ 	cmd = alloca(sizeof(char) * (len + 1));
+ 	snprintf(cmd, len + 1, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+ 	output = popen(cmd, "r");
++	if (!output)
++		return;
+ 	for (i = 0; i <= offset; i++)
+ 		fgets(buffer, 50, output);
+ 	for (i = 4; i < end; i++)
+-- 
+2.47.0
+

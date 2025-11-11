@@ -1,0 +1,38 @@
+From 5010a9766aff8a0c8e8644acef40d025ec2e0a48 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 30 Jun 2024 16:50:50 -0700
+Subject: [PATCH 26/44] direct initialize msghdr members
+
+Standard C99. { 0 } is somewhat interesting as some compilers warn about
+uninitialized members, which is bogus.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ irqbalance.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index 1490336..64b41f7 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -406,11 +406,12 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
+ 	int valid_user = 0;
+ 
+ 	struct iovec iov = { buff, 500 };
+-	struct msghdr msg = { 0 };
+-	msg.msg_iov = &iov;
+-	msg.msg_iovlen = 1;
+-	msg.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred)));
+-	msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
++	struct msghdr msg = {
++		.msg_iov = &iov,
++		.msg_iovlen = 1,
++		.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred))),
++		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
++	};
+ 
+ 	struct cmsghdr *cmsg;
+ 
+-- 
+2.47.0
+

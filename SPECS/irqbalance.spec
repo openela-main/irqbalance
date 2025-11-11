@@ -1,15 +1,59 @@
 Name:           irqbalance
 Version:        1.9.4
-Release:        2%{?dist}
+Release:        5%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 License:        GPL-2.0-only
 URL:            https://github.com/Irqbalance/irqbalance
 Source0:        %{url}/archive/v%{version}/irqbalance-%{version}.tar.gz
-Patch1:         irqbalance-1.9.0-environment-file-sysconfig.patch
-Patch2: 	0001-irqbalance-ui-check-if-using-a-negative-index-of-buf.patch
-Patch3: 	0002-Check-fflush-return-value.patch
-Patch4: 	0003-Drop-ProtectKernelTunables.patch
+
+Patch2: 0001-irqbalance-ui-check-if-using-a-negative-index-of-buf.patch
+Patch3: 0002-Check-fflush-return-value.patch
+Patch4: 0003-fix-32-bit-formats.patch
+Patch5: 0004-add-void-to-fix-strict-prototypes.patch
+Patch6: 0005-cast-void-pointer-to-actual-type.patch
+Patch7: 0006-meson-move-build-files-to-repository-root.patch
+Patch8: 0007-meson-bump-project-version-to-1.9.4.patch
+Patch9: 0008-meson-drop-redundant-install_man-options.patch
+Patch10: 0009-meson-add-a-minimum-version-decorator.patch
+Patch11: 0010-Drop-ProtectKernelTunables.patch
+Patch12: 0011-meson-replace-generic-array-with-files.patch
+Patch13: 0012-meson-use-find_library-for-numa.patch
+Patch14: 0013-ui-change-void-to-char.patch
+Patch15: 0014-clang-tidy-don-t-assign-in-if.patch
+Patch16: 0015-clang-tidy-properly-use-strncmp.patch
+Patch17: 0016-replace-malloc-with-g_malloc0.patch
+Patch18: 0017-clang-tidy-don-t-use-else-after-return.patch
+Patch19: 0018-clang-tidy-remove-return-in-void-functions.patch
+Patch20: 0019-clang-tidy-remove-redundant-declarations.patch
+Patch21: 0020-clang-tidy-remove-duplicate-include.patch
+Patch22: 0021-CI-add-meson-CI.patch
+Patch23: 0022-Wrap-migrate_irq-in-a-higher-level-utility-function.patch
+Patch24: 0023-Track-IRQ-slots-count-per-CPU-to-avoid-overflowing.patch
+Patch25: 0024-Disable-linking-to-curses-if-without-irqbalance-ui-i.patch
+Patch26: 0025-Remove-extraneous-space-causing-with-systemd-not-be-.patch
+Patch27: 0026-direct-initialize-msghdr-members.patch
+Patch28: 0027-direct-initialize-iovec.patch
+Patch29: 0028-clang-tidy-add-missing-free.patch
+Patch30: 0029-clang-tidy-don-t-assign-in-if.patch
+Patch31: 0030-clang-tidy-remove-pointless-casts.patch
+Patch32: 0031-use-g_malloc-and-friends.patch
+Patch33: 0032-remove-malloc-from-ucred.patch
+Patch34: 0033-gcc-analyzer-add-NULL-checks.patch
+Patch35: 0034-gcc-analyzer-increase-socket_name-size.patch
+Patch36: 0035-use-g_strdup_printf.patch
+Patch37: 0036-avoid-malloc-with-create_credentials_msg.patch
+Patch38: 0037-conver-strncmp-to-g_str_has_prefix.patch
+Patch39: 0038-define-IRQBALANCE_ARGS-as-empty-string-to-squelch-sy.patch
+Patch40: 0039-Minor-punctuation-fix.patch
+Patch41: 0040-Version-option-should-return-0-rather-than-1.patch
+Patch42: 0041-Add-CAP_SETPCAP-to-CapabilityBoundingSet-in-irqbalan.patch
+Patch43: 0042-Check-info-moved-before-updating.patch
+Patch44: 0043-irqbalance.1-a-b-a-b-it-s-type-its-type.patch
+Patch45: 0044-Use-EPERM-instead-of-EIO-when-try-setting-irq-affini.patch
+
+Patch46: irqbalance-1.9.0-environment-file-sysconfig.patch
+Patch47: irqbalance-manual.patch
 
 BuildRequires:  autoconf automake libtool libcap-ng
 BuildRequires:  glib2-devel pkgconf libcap-ng-devel
@@ -42,6 +86,7 @@ install -D -p -m 0644 ./misc/irqbalance.service %{buildroot}/%{_unitdir}/irqbala
 install -D -p -m 0644 ./misc/irqbalance.env %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 install -d %{buildroot}%{_mandir}/man1/
 install -p -m 0644 ./irqbalance.1 %{buildroot}%{_mandir}/man1/
+install -d %{buildroot}%{_libexecdir}/irqbalance/
 
 %check
 make check
@@ -51,6 +96,7 @@ make check
 %{_sbindir}/irqbalance
 %{_unitdir}/irqbalance.service
 %{_mandir}/man1/*
+%dir %{_libexecdir}/irqbalance
 %config(noreplace) %{_sysconfdir}/sysconfig/irqbalance
 
 %post
@@ -63,6 +109,17 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
+* Mon Aug 18 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-5
+- Release 1.9.4-5
+
+* Thu Nov 7 2024 Tao Liu <ltao@redhat.com> - 2:1.9.4-4
+- Release 1.9.4-4
+- Rebase to upstream commit (b4b6f194da)
+
+* Tue Oct 29 2024 Troy Dawson <tdawson@redhat.com> - 2:1.9.4-3
+- Bump release for October 2024 mass rebuild:
+  Resolves: RHEL-64018
+
 * Mon Jun 24 2024 Troy Dawson <tdawson@redhat.com> - 2:1.9.4-2
 - Bump release for June 2024 mass rebuild
 

@@ -1,0 +1,31 @@
+From 25fa38022bc349cd2d3fdb41fcdad6e7193a73a7 Mon Sep 17 00:00:00 2001
+From: lvgenggeng <lvgenggeng@uniontech.com>
+Date: Tue, 3 Sep 2024 23:31:49 +0800
+Subject: [PATCH 42/44] Check info->moved before updating
+
+In migrate_irq(), the list will not be changed if info not found.
+
+Signed-off-by: lvgenggeng <lvgenggeng@uniontech.com>
+---
+ irqlist.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/irqlist.c b/irqlist.c
+index 9483a11..5ad2faf 100644
+--- a/irqlist.c
++++ b/irqlist.c
+@@ -210,6 +210,11 @@ void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info
+ 	to_list = to ? &to->interrupts : &rebalance_irq_list;
+ 
+ 	migrate_irq(from_list, to_list, info);
++	/*
++	 * only update list after info found
++	 */
++	if (!info->moved)
++		return;
+ 
+ 	if (from) {
+ 		if (from->slots_left != INT_MAX)
+-- 
+2.47.0
+

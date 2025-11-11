@@ -1,0 +1,29 @@
+From 21e1ae87a832eeeb3971180aade4dfde5c259acf Mon Sep 17 00:00:00 2001
+From: Eli Schwartz <eschwartz93@gmail.com>
+Date: Mon, 1 Apr 2024 00:17:52 -0400
+Subject: [PATCH 07/44] meson: bump project version to 1.9.4
+
+This was not done in commit f8b8cddfb54516308cd484c883d930f97c9e12ed.
+
+Signed-off-by: Eli Schwartz <eschwartz93@gmail.com>
+---
+ meson.build | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 707baed..9abf2d1 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,4 +1,8 @@
+-project('irqbalance', 'c', version: '1.9.3', default_options: ['warning_level=1'])
++project('irqbalance', 'c',
++    version: '1.9.4',
++    default_options: ['warning_level=1'],
++)
++
+ cc = meson.get_compiler('c')
+ 
+ glib_dep = dependency('glib-2.0')
+-- 
+2.47.0
+

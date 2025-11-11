@@ -1,0 +1,44 @@
+From 280b89d44c64d561ce091d3bc1a7145ad3a77167 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 31 Mar 2024 13:31:26 -0700
+Subject: [PATCH 11/44] meson: replace generic array with files()
+
+The latter is more restrictive.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ meson.build | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 026c4c4..90d6aac 100644
+--- a/meson.build
++++ b/meson.build
+@@ -40,7 +40,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
+   install_man('irqbalance-ui.1')
+ endif
+ 
+-irqbalance_sources = [
++irqbalance_sources = files(
+   'activate.c',
+   'bitmap.c',
+   'classify.c',
+@@ -50,12 +50,12 @@ irqbalance_sources = [
+   'numa.c',
+   'placement.c',
+   'procinterrupts.c',
+-]
++)
+ 
+ if libnl_3_dep.found() and libnl_genl_3_dep.found()
+-  irqbalance_sources += [
++  irqbalance_sources += files(
+     'thermal.c',
+-  ]
++  )
+ endif
+ 
+ executable(
+-- 
+2.47.0
+

@@ -1,0 +1,92 @@
+From 44795adcf03c951efb92bed69af7d68d230d6d69 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 31 Mar 2024 13:59:01 -0700
+Subject: [PATCH 21/44] CI: add meson CI
+
+tests old and new Clang/GCC on x64 and Alpine Linux on various platforms.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ .github/workflows/meson.yml | 70 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
+ create mode 100644 .github/workflows/meson.yml
+
+diff --git a/.github/workflows/meson.yml b/.github/workflows/meson.yml
+new file mode 100644
+index 0000000..df2d826
+--- /dev/null
++++ b/.github/workflows/meson.yml
+@@ -0,0 +1,70 @@
++name: meson
++
++on: [pull_request, push]
++
++concurrency:
++  group: ${{github.workflow}}-${{github.head_ref}}
++  cancel-in-progress: true
++
++jobs:
++  Linux-GCC:
++    runs-on: ubuntu-20.04
++    strategy:
++      matrix:
++        cc: ['7', '13']
++    steps:
++      - uses: actions/checkout@v4
++      - uses: egor-tensin/setup-gcc@v1
++        with:
++          version: ${{matrix.cc}}
++      - name: Install Packages
++        run: |
++          python3 -m pip install meson ninja
++          sudo apt install -y libcap-ng-dev libnl-3-dev libnl-genl-3-dev libnuma-dev libsystemd-dev
++      - name: Compile and Test
++        run: |
++          meson setup "${{github.workspace}}/build" -Dwarning_level=3
++          meson compile -C "${{github.workspace}}/build"
++          meson test -C "${{github.workspace}}/build"
++  Linux-Clang:
++    runs-on: ubuntu-20.04
++    strategy:
++      matrix:
++        cc: ['6.0', '18']
++    steps:
++      - uses: actions/checkout@v4
++      - uses: egor-tensin/setup-clang@v1
++        with:
++          version: ${{matrix.cc}}
++      - name: Install Packages
++        run: |
++          python3 -m pip install meson ninja
++          sudo apt install -y libcap-ng-dev libnl-3-dev libnl-genl-3-dev libnuma-dev libsystemd-dev
++      - name: Compile and Test
++        run: |
++          meson setup "${{github.workspace}}/build" -Dwarning_level=3
++          meson compile -C "${{github.workspace}}/build" --verbose
++          meson test -C "${{github.workspace}}/build" --verbose
++  Alpine:
++    runs-on: ubuntu-20.04
++    strategy:
++      matrix:
++        platform: ['aarch64', 'armhf', 'armv7', 'ppc64le', 'riscv64', 's390x']
++    defaults:
++      run:
++        shell: alpine.sh {0}
++    steps:
++      - name: Get pushed code
++        uses: actions/checkout@v4
++
++      - uses: jirutka/setup-alpine@v1
++        with:
++          branch: edge
++          arch: ${{matrix.platform}}
++          packages: >
++            build-base glib-dev libcap-ng-dev libnl3-dev meson numactl-dev
++      - name: Compile and Test
++        run: |
++          meson setup "${{github.workspace}}/build" -Dwarning_level=3 -Dsystemd=disabled
++          meson compile -C "${{github.workspace}}/build"
++          meson test -C "${{github.workspace}}/build"
+-- 
+2.47.0
+

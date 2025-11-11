@@ -1,0 +1,46 @@
+From 7622883bad5b75d28d8e1cb3a2c48b9589aa82b4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 4 Jul 2024 13:54:12 -0700
+Subject: [PATCH 32/44] remove malloc from ucred
+
+This just gets freed at the end after getting copied.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ ui/irqbalance-ui.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/ui/irqbalance-ui.c b/ui/irqbalance-ui.c
+index 9bb76fd..d281f47 100644
+--- a/ui/irqbalance-ui.c
++++ b/ui/irqbalance-ui.c
+@@ -30,10 +30,11 @@ static int default_bufsz = 8192;
+ 
+ struct msghdr * create_credentials_msg(void)
+ {
+-	struct ucred *credentials = g_malloc(sizeof(struct ucred));
+-	credentials->pid = getpid();
+-	credentials->uid = geteuid();
+-	credentials->gid = getegid();
++	struct ucred credentials = {
++		.pid = getpid(),
++		.uid = geteuid(),
++		.gid = getegid(),
++	};
+ 
+ 	struct msghdr *msg = g_malloc0(sizeof(struct msghdr));
+ 	msg->msg_iovlen = 1;
+@@ -44,9 +45,7 @@ struct msghdr * create_credentials_msg(void)
+ 	cmsg->cmsg_level = SOL_SOCKET;
+ 	cmsg->cmsg_type = SCM_CREDENTIALS;
+ 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+-	memcpy(CMSG_DATA(cmsg), credentials, sizeof(struct ucred));
+-
+-	g_free(credentials);
++	memcpy(CMSG_DATA(cmsg), &credentials, sizeof(struct ucred));
+ 	return msg;
+ }
+ 
+-- 
+2.47.0
+
