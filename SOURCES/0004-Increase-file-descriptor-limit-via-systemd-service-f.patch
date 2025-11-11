@@ -1,0 +1,36 @@
+From 0a7ca36d99f14dcaa32cbd2e6360c382e3a9ed1a Mon Sep 17 00:00:00 2001
+From: Thomas Renninger <trenn@suse.de>
+Date: Wed, 9 Apr 2025 09:44:19 +0200
+Subject: [PATCH 4/4] Increase file descriptor limit via systemd service file
+
+Default file limit value set by systemd can be found:
+systemctl show --property DefaultLimitNOFILESoft
+DefaultLimitNOFILESoft=1024
+
+This limit could easily be exceeded on larger systems resulting in:
+
+Starting irqbalance Can't open class file: : Too many open files
+startproc:  signal catched /usr/sbin/irqbalance: Segmentation fault
+
+Adding the property to irqbalance.service.in sets a sane default
+and allows people to easily find the right place where to adjust
+the limit.
+---
+ misc/irqbalance.service.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/misc/irqbalance.service.in b/misc/irqbalance.service.in
+index bd31039..40ff38b 100644
+--- a/misc/irqbalance.service.in
++++ b/misc/irqbalance.service.in
+@@ -16,6 +16,7 @@ ReadOnlyPaths=/
+ ReadWritePaths=/proc/irq
+ RestrictAddressFamilies=AF_UNIX AF_NETLINK
+ RuntimeDirectory=irqbalance/
++LimitNOFILE=4096
+ IPAddressDeny=any
+ ProtectHome=true
+ PrivateTmp=yes 
+-- 
+2.47.0
+

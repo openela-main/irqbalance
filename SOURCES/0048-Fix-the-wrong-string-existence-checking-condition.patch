@@ -1,7 +1,7 @@
 From ffa304a885fdafaf233510baa0017ceaa1349e96 Mon Sep 17 00:00:00 2001
 From: Tao Liu <ltao@redhat.com>
 Date: Fri, 7 Mar 2025 16:08:47 +1300
-Subject: [PATCH] Fix the wrong string existence checking condition
+Subject: [PATCH 4/4] Fix the wrong string existence checking condition
 
 Commit da75aae4effd ("conver strncmp to g_str_has_prefix") introduced an error
 which reversed the string existence checking condition.

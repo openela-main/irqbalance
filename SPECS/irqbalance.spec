@@ -1,6 +1,6 @@
 Name:           irqbalance
 Version:        1.9.4
-Release:        2%{?dist}.2
+Release:        4%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 
@@ -65,11 +65,17 @@ Patch43: 0042-Check-info-moved-before-updating.patch
 Patch44: 0043-irqbalance.1-a-b-a-b-it-s-type-its-type.patch
 Patch45: 0044-Use-EPERM-instead-of-EIO-when-try-setting-irq-affini.patch
 
-Patch46: irqbalance-1.9.0-environment-file-sysconfig.patch
 Patch47: irqbalance-manual.patch
 
-Patch48: 0001-check_platform_device-Check-the-length-of-path.patch
-Patch49: 0001-Fix-the-wrong-string-existence-checking-condition.patch
+Patch48: 0045-fix-some-GCC-fanalyzer-warnings.patch
+Patch49: 0046-Check-API-command-length-allow-up-to-16384.patch
+Patch50: 0047-check_platform_device-Check-the-length-of-path.patch
+Patch51: 0048-Fix-the-wrong-string-existence-checking-condition.patch
+Patch52: 0001-Unify-meson-and-autoconf-Install-executables-to-sbin.patch
+Patch53: 0002-Properly-embed-EnvironmentFile-sourced-systemd-confi.patch
+Patch54: 0004-Increase-file-descriptor-limit-via-systemd-service-f.patch
+
+Patch55: irqbalance-1.9.0-environment-file-sysconfig.patch
 
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
@@ -114,11 +120,11 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
-* Wed Jun 25 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-2.2
-- Bump up version number
+* Wed May 14 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-4
+- Rebase to upstream commit (d913f60d84)
 
-* Wed May 14 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-2.1
-- Release 1.9.4-2.1
+* Mon Mar 10 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-3
+- Rebase to upstream commit (be5e3b8db2)
 
 * Wed Nov 6 2024 Tao Liu <ltao@redhat.com> - 2:1.9.4-2
 - Release 1.9.4-2

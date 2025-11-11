@@ -1,7 +1,7 @@
 From d602002e1982a322d19034a4a64ca5a81bace7ef Mon Sep 17 00:00:00 2001
 From: Tao Liu <ltao@redhat.com>
 Date: Tue, 25 Feb 2025 16:35:34 +1300
-Subject: [PATCH] check_platform_device: Check the length of path
+Subject: [PATCH 3/4] check_platform_device: Check the length of path
 
 The default length of path is 512, but the strcat() is used without
 check if path is overflowed, otherwise a segfault is observed on

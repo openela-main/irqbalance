@@ -1,0 +1,259 @@
+From 41cb97c714e6216ab7f10f8aaa51a2548da3acc7 Mon Sep 17 00:00:00 2001
+From: Thomas Renninger <trenn@suse.de>
+Date: Mon, 7 Apr 2025 09:09:31 +0200
+Subject: [PATCH 2/4] Properly embed EnvironmentFile sourced systemd configs
+ into meson and autonconf
+
+Commit 724243f introduced a 2nd environment file.
+
+This patch fixes that both files are optional.
+There should be one mandatory EnvironmentFile provided by package install as
+before which lives in e.g. /usr/lib
+and one optional one that users/admins can place into /etc/...
+
+Before the replacement of both EnvironmentFile directives was fragile, e.g.
+a spec file's sed could easily result in overwriting both EnvironmentFile
+occurences silently pointing to the same location.
+
+This patch properly integrates the paths into meson and autoconf by
+introducing 2 configurable directories, defaults set to:
+/usr/etc/default
+for the mandatory, package provided config file and
+/etc/default
+for the optional admin override conf file.
+It renames misc/irqbalance.service to misc/irqbalance.service.in and replaces
+the paths via AC_SUBST/AC_CONFIG_FILES (autoconf) or configure_file (meson)
+via pkgconfdir and usrconfdir introduced configure/setup options:
++EnvironmentFile=@pkgconfdir@/irqbalance.env
++EnvironmentFile=-@usrconfdir@/irqbalance
+
+irqbalance.service is now installed via autoconf/meson, by trying to fetch
+systemd's unitdir via pkgconfig.
+---
+ Makefile.am                |  5 ++++-
+ configure.ac               | 19 +++++++++++++++++
+ meson.build                | 37 +++++++++++++++++++++++++++++++++
+ meson_options.txt          |  8 ++++++++
+ misc/irqbalance.service    | 42 --------------------------------------
+ misc/irqbalance.service.in | 42 ++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 110 insertions(+), 43 deletions(-)
+ delete mode 100644 misc/irqbalance.service
+ create mode 100644 misc/irqbalance.service.in
+
+diff --git a/Makefile.am b/Makefile.am
+index 80d8fee..ed40628 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -22,7 +22,10 @@
+ 
+ AUTOMAKE_OPTIONS = no-dependencies
+ ACLOCAL_AMFLAGS = -I m4
+-EXTRA_DIST = COPYING autogen.sh misc/irqbalance.service misc/irqbalance.env
++EXTRA_DIST = COPYING autogen.sh
++
++systemdsystemunit_DATA = misc/irqbalance.service
++pkgconf_DATA = misc/irqbalance.env
+ 
+ SUBDIRS = tests
+ 
+diff --git a/configure.ac b/configure.ac
+index 678f66e..6983c4a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -115,6 +115,24 @@ AS_IF(
+   ]
+ )
+ 
++AC_ARG_WITH([pkgconfdir],
++  [AS_HELP_STRING([--with-pkgconfdir=DIR],
++    [Systemd Environment configs sourced by irqbalanced])],
++    [pkgconfdir=$withval],
++    [pkgconfdir="$prefix/etc/default"])
++AC_SUBST([pkgconfdir])
++
++AC_ARG_WITH([usrconfdir],
++  [AS_HELP_STRING([--with-usrconfdir=DIR],
++    [Systemd Environment user configs sourced by irqbalanced])],
++    [usrconfdir=$withval],
++    [usrconfdir="${sysconfdir}/default"])
++AC_SUBST([usrconfdir])
++
++AC_CONFIG_FILES([misc/irqbalance.service])
++
++PKG_CHECK_VAR([systemdsystemunitdir], [systemd], [systemdsystemunitdir])
++
+ AC_OUTPUT(Makefile tests/Makefile)
+ 
+ AC_MSG_NOTICE()
+@@ -123,3 +141,4 @@ AC_MSG_NOTICE([Target:                 $target])
+ AC_MSG_NOTICE([Installation prefix:    $prefix])
+ AC_MSG_NOTICE([Compiler:               $CC])
+ AC_MSG_NOTICE([Compiler flags: $CFLAGS])
++AC_MSG_NOTICE([Systemdunitdir:         $systemdsystemunitdir])
+diff --git a/meson.build b/meson.build
+index 0441b30..b69c224 100644
+--- a/meson.build
++++ b/meson.build
+@@ -14,6 +14,13 @@ numa_dep = cc.find_library('numa', required: get_option('numa'))
+ libnl_3_dep = dependency('libnl-3.0', required: get_option('thermal'))
+ libnl_genl_3_dep = dependency('libnl-genl-3.0', required: get_option('thermal'))
+ systemd_dep = dependency('libsystemd', required: get_option('systemd'))
++systemd_dir_dep = dependency('systemd', required: get_option('systemd'))
++
++systemdsystemunitdir = systemd_dir_dep.get_variable(
++  pkgconfig: 'systemdsystemunitdir',
++  default_value: get_option('prefix') / 'lib/systemd/system'
++)
++
+ 
+ cdata = configuration_data()
+ cdata.set('HAVE_GETOPT_LONG', cc.has_function('getopt_long'))
+@@ -68,3 +75,33 @@ executable(
+ )
+ 
+ install_man('irqbalance.1')
++
++if systemd_dep.found()
++  pkgconfdir = get_option('pkgconfdir')
++  usrconfdir = get_option('usrconfdir')
++
++# Set defaults
++  if pkgconfdir == ''
++     pkgconfdir = get_option('prefix') / 'etc/default'
++  endif
++  if usrconfdir == ''
++     usrconfdir = get_option('sysconfdir') / 'default'
++  endif
++
++  idata = configuration_data()
++  idata.set('usrconfdir', usrconfdir)
++  idata.set('pkgconfdir', pkgconfdir)
++
++  configure_file(
++    input: 'misc/irqbalance.service.in',
++    output: 'irqbalance.service',
++    install_dir: systemdsystemunitdir,
++    configuration: idata
++  )
++  configure_file(
++    input: 'misc/irqbalance.env',
++    output: 'irqbalance.env',
++    install_dir: pkgconfdir,
++    configuration: idata
++  )
++endif
+diff --git a/meson_options.txt b/meson_options.txt
+index 53cc121..c4967f7 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -17,3 +17,11 @@ option('thermal', type : 'feature',
+ option('ui', type : 'feature',
+   description : 'Build the UI component',
+ )
++
++option('usrconfdir', type: 'string',
++  description: 'Directory to systemd environment file, optionally added by user'
++)
++
++option('pkgconfdir', type: 'string',
++  description: 'Directory to systemd environment file, provided by irqbalance'
++)
+diff --git a/misc/irqbalance.service b/misc/irqbalance.service
+deleted file mode 100644
+index 7e0c5d8..0000000
+--- a/misc/irqbalance.service
++++ /dev/null
+@@ -1,42 +0,0 @@
+-[Unit]
+-Description=irqbalance daemon
+-Documentation=man:irqbalance(1)
+-Documentation=https://github.com/Irqbalance/irqbalance
+-ConditionVirtualization=!container
+-ConditionCPUs=>1
+-
+-[Service]
+-EnvironmentFile=-/usr/lib/irqbalance/defaults.env
+-EnvironmentFile=-/path/to/irqbalance.env
+-ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
+-CapabilityBoundingSet=CAP_SETPCAP
+-NoNewPrivileges=yes
+-ProtectSystem=strict
+-ReadOnlyPaths=/
+-ReadWritePaths=/proc/irq
+-RestrictAddressFamilies=AF_UNIX AF_NETLINK
+-RuntimeDirectory=irqbalance/
+-IPAddressDeny=any
+-ProtectHome=true
+-PrivateTmp=yes 
+-PrivateNetwork=yes
+-PrivateUsers=true
+-ProtectHostname=yes 
+-ProtectClock=yes 
+-ProtectKernelModules=yes 
+-ProtectKernelLogs=yes 
+-ProtectControlGroups=yes 
+-RestrictNamespaces=yes
+-LockPersonality=yes
+-MemoryDenyWriteExecute=yes
+-RestrictRealtime=yes
+-RestrictSUIDSGID=yes
+-RemoveIPC=yes
+-PrivateMounts=yes
+-SystemCallFilter=@cpu-emulation @privileged @system-service
+-SystemCallFilter=~@clock @module @mount @obsolete @raw-io @reboot @resources @swap
+-SystemCallErrorNumber=EPERM
+-SystemCallArchitectures=native
+-
+-[Install]
+-WantedBy=multi-user.target
+diff --git a/misc/irqbalance.service.in b/misc/irqbalance.service.in
+new file mode 100644
+index 0000000..bd31039
+--- /dev/null
++++ b/misc/irqbalance.service.in
+@@ -0,0 +1,42 @@
++[Unit]
++Description=irqbalance daemon
++Documentation=man:irqbalance(1)
++Documentation=https://github.com/Irqbalance/irqbalance
++ConditionVirtualization=!container
++ConditionCPUs=>1
++
++[Service]
++EnvironmentFile=@pkgconfdir@/irqbalance.env
++EnvironmentFile=-@usrconfdir@/irqbalance
++ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
++CapabilityBoundingSet=CAP_SETPCAP
++NoNewPrivileges=yes
++ProtectSystem=strict
++ReadOnlyPaths=/
++ReadWritePaths=/proc/irq
++RestrictAddressFamilies=AF_UNIX AF_NETLINK
++RuntimeDirectory=irqbalance/
++IPAddressDeny=any
++ProtectHome=true
++PrivateTmp=yes 
++PrivateNetwork=yes
++PrivateUsers=true
++ProtectHostname=yes 
++ProtectClock=yes 
++ProtectKernelModules=yes 
++ProtectKernelLogs=yes 
++ProtectControlGroups=yes 
++RestrictNamespaces=yes
++LockPersonality=yes
++MemoryDenyWriteExecute=yes
++RestrictRealtime=yes
++RestrictSUIDSGID=yes
++RemoveIPC=yes
++PrivateMounts=yes
++SystemCallFilter=@cpu-emulation @privileged @system-service
++SystemCallFilter=~@clock @module @mount @obsolete @raw-io @reboot @resources @swap
++SystemCallErrorNumber=EPERM
++SystemCallArchitectures=native
++
++[Install]
++WantedBy=multi-user.target
+-- 
+2.47.0
+
