@@ -1,6 +1,6 @@
 Name:           irqbalance
 Version:        1.9.4
-Release:        5%{?dist}
+Release:        6%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 License:        GPL-2.0-only
@@ -52,8 +52,21 @@ Patch43: 0042-Check-info-moved-before-updating.patch
 Patch44: 0043-irqbalance.1-a-b-a-b-it-s-type-its-type.patch
 Patch45: 0044-Use-EPERM-instead-of-EIO-when-try-setting-irq-affini.patch
 
-Patch46: irqbalance-1.9.0-environment-file-sysconfig.patch
 Patch47: irqbalance-manual.patch
+
+Patch48: 0045-fix-some-GCC-fanalyzer-warnings.patch
+Patch49: 0046-Check-API-command-length-allow-up-to-16384.patch
+Patch50: 0047-check_platform_device-Check-the-length-of-path.patch
+Patch51: 0048-Fix-the-wrong-string-existence-checking-condition.patch
+Patch52: 0001-Unify-meson-and-autoconf-Install-executables-to-sbin.patch
+Patch53: 0002-Properly-embed-EnvironmentFile-sourced-systemd-confi.patch
+Patch54: 0004-Increase-file-descriptor-limit-via-systemd-service-f.patch
+
+Patch55: irqbalance-1.9.0-environment-file-sysconfig.patch
+
+Patch56: 0001-Safer-string-handling-in-procinterrupts.c.patch
+Patch57: 0002-Added-missing-and-fixed-message-in-procinterrupts.c.patch
+Patch58: 0003-Fixed-incorrect-comparison-in-snprintf-in-procinterr.patch
 
 BuildRequires:  autoconf automake libtool libcap-ng
 BuildRequires:  glib2-devel pkgconf libcap-ng-devel
@@ -109,6 +122,9 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
+* Tue Sep 30 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-6
+- Rebase to upstream commit (8e8945e509)
+
 * Mon Aug 18 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-5
 - Release 1.9.4-5
 

@@ -1,0 +1,113 @@
+From d43411406bb9f37968ea71c11863f485db824b23 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 24 Dec 2024 15:37:35 -0800
+Subject: [PATCH 1/4] fix some GCC fanalyzer warnings
+
+-Wfanalyzer complains about null pointer dereferences. Check for them.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ placement.c        |  2 +-
+ ui/irqbalance-ui.c | 15 ++++++++-------
+ ui/ui.c            | 17 +++++++++++++----
+ 3 files changed, 22 insertions(+), 12 deletions(-)
+
+diff --git a/placement.c b/placement.c
+index 3276dea..0fa4af1 100644
+--- a/placement.c
++++ b/placement.c
+@@ -67,7 +67,7 @@ static void find_best_object(struct topo_obj *d, void *data)
+ 		best->best = d;
+ 		best->best_cost = newload;
+ 	} else if (newload == best->best_cost) {
+-		if (g_list_length(d->interrupts) < g_list_length(best->best->interrupts)) {
++		if (!best->best || g_list_length(d->interrupts) < g_list_length(best->best->interrupts)) {
+ 			best->best = d;
+ 		}
+ 	}
+diff --git a/ui/irqbalance-ui.c b/ui/irqbalance-ui.c
+index 4a6832a..9ed25e1 100644
+--- a/ui/irqbalance-ui.c
++++ b/ui/irqbalance-ui.c
+@@ -214,17 +214,18 @@ out: {
+ GList * concat_child_lists(cpu_node_t *node)
+ {
+ 	GList *new = NULL;
++	GList *cpu_entry;
+ 	GList *child_entry = g_list_first(node->children);
+-	do {
++	while (child_entry) {
+ 		cpu_node_t *child = (cpu_node_t *)child_entry->data;
+-		GList *cpu_entry = g_list_first(child->cpu_list);
+-		do {
++		cpu_entry = g_list_first(child->cpu_list);
++		while (cpu_entry) {
+ 			uint64_t *cpu = (uint64_t *)cpu_entry->data;
+ 			new = g_list_append(new, cpu);
+ 			cpu_entry = g_list_next(cpu_entry);
+-		} while(cpu_entry != NULL);
++		};
+ 		child_entry = g_list_next(child_entry);
+-	} while(child_entry != NULL);
++	}
+ 
+ 	return new;
+ }
+@@ -253,11 +254,11 @@ void assign_cpu_mask(cpu_node_t *node, void *data __attribute__((unused)))
+ 	mask[0] = '\0';
+ 	unsigned int sum = 0;
+ 	GList *list_entry = g_list_first(node->cpu_list);
+-	do {
++	while (list_entry) {
+ 		int *cpu = list_entry->data;
+ 		sum += 1 << (*cpu);
+ 		list_entry = g_list_next(list_entry);
+-	} while(list_entry != NULL);
++	};
+ 	snprintf(mask, 15, "0x%x", sum);
+ 	node->cpu_mask = mask;
+ 
+diff --git a/ui/ui.c b/ui/ui.c
+index 8325bcd..b716f3b 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -210,12 +210,16 @@ void display_banned_cpus(void)
+ 
+ int toggle_cpu(GList *cpu_list, int cpu_number)
+ {
++	cpu_ban_t *entry_data;
++
+ 	GList *entry = g_list_first(cpu_list);
+-	cpu_ban_t *entry_data = (cpu_ban_t *)(entry->data);
+-	while(entry_data->number != cpu_number) {
+-		entry = g_list_next(entry);
++	while (entry) {
+ 		entry_data = (cpu_ban_t *)(entry->data);
++		if (entry_data && entry_data->number == cpu_number)
++			break;
++		entry = g_list_next(entry);
+ 	}
++
+ 	if(((cpu_ban_t *)(entry->data))->is_banned) {
+ 		((cpu_ban_t *)(entry->data))->is_banned = 0;
+ 	} else {
+@@ -522,10 +526,15 @@ int toggle_irq(GList *irq_list, int position)
+ {
+ 	GList *entry = g_list_first(irq_list);
+ 	int irq_node = 0;
+-	while(irq_node != position) {
++
++	while(entry && irq_node != position) {
+ 		entry = g_list_next(entry);
+ 		irq_node++;
+ 	}
++
++	if (!entry)
++		return -1;
++
+ 	if(((irq_t *)(entry->data))->is_banned) {
+ 		((irq_t *)(entry->data))->is_banned = 0;
+ 	} else {
+-- 
+2.47.0
+

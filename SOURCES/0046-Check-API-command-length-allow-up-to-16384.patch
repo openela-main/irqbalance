@@ -1,0 +1,47 @@
+From 105b155545e00560a55d34b160324910586ae74c Mon Sep 17 00:00:00 2001
+From: Etienne Champetier <e.champetier@ateme.com>
+Date: Thu, 30 Jan 2025 15:20:31 -0500
+Subject: [PATCH 2/4] Check API command length, allow up to 16384
+
+When using the API to ban cpus or irqs, the command can easily be longer
+than 500, so increase the buffer to 16384, which fits ~3250 cpus
+or irqs, and add a check to log and exit if it is still not enough.
+
+Signed-off-by: Etienne Champetier <e.champetier@ateme.com>
+---
+ irqbalance.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/irqbalance.c b/irqbalance.c
+index 6422a7b..f80244c 100644
+--- a/irqbalance.c
++++ b/irqbalance.c
+@@ -400,12 +400,12 @@ void get_object_stat(struct topo_obj *object, void *data)
+ #ifdef HAVE_IRQBALANCEUI
+ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attribute__((unused)))
+ {
+-	char buff[500];
++	char buff[16384];
+ 	int sock;
+ 	int recv_size = 0;
+ 	int valid_user = 0;
+ 
+-	struct iovec iov = { buff, 500 };
++	struct iovec iov = { buff, sizeof(buff) };
+ 	struct msghdr msg = {
+ 		.msg_iov = &iov,
+ 		.msg_iovlen = 1,
+@@ -426,6 +426,10 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
+ 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
+ 			goto out_close;
+ 		}
++		if (recv_size == sizeof(buff)) {
++			log(TO_ALL, LOG_WARNING, "Received command too long.\n");
++			goto out_close;
++		}
+ 		cmsg = CMSG_FIRSTHDR(&msg);
+ 		if (!cmsg) {
+ 			log(TO_ALL, LOG_WARNING, "Connection no memory.\n");
+-- 
+2.47.0
+
