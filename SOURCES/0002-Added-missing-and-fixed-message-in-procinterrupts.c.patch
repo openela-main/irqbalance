@@ -1,0 +1,27 @@
+From 5fdc1d64083ab92f63cdd9d4f2f01587cf8eab28 Mon Sep 17 00:00:00 2001
+From: Jiri BlueBear Dluhos <jiri.bluebear.dluhos@gmail.com>
+Date: Tue, 10 Jun 2025 00:51:43 +0200
+Subject: [PATCH 2/3] Added missing '/' and fixed message in procinterrupts.c.
+
+---
+ procinterrupts.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/procinterrupts.c b/procinterrupts.c
+index 16dcff2..ab31cdb 100644
+--- a/procinterrupts.c
++++ b/procinterrupts.c
+@@ -69,8 +69,8 @@ static int check_platform_device(char *name, struct irq_info *info)
+ 		{NULL},
+ 	};
+ 
+-	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s", name) == PATH_MAX) {
+-		log(TO_ALL, LOG_ERROR, "Device path in /sys exceeds maximum length");
++	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s/", name) == PATH_MAX) {
++		log(TO_ALL, LOG_WARNING, "WARNING: Platform device path in /sys exceeds PATH_MAX, cannot examine");
+ 		return -ENAMETOOLONG;
+ 	}
+ 
+-- 
+2.47.0
+

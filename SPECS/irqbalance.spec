@@ -1,6 +1,6 @@
 Name:           irqbalance
 Version:        1.9.4
-Release:        4%{?dist}
+Release:        5%{?dist}
 Epoch:          2
 Summary:        IRQ balancing daemon
 
@@ -77,6 +77,10 @@ Patch54: 0004-Increase-file-descriptor-limit-via-systemd-service-f.patch
 
 Patch55: irqbalance-1.9.0-environment-file-sysconfig.patch
 
+Patch56: 0001-Safer-string-handling-in-procinterrupts.c.patch
+Patch57: 0002-Added-missing-and-fixed-message-in-procinterrupts.c.patch
+Patch58: 0003-Fixed-incorrect-comparison-in-snprintf-in-procinterr.patch
+
 %description
 irqbalance is a daemon that evenly distributes IRQ load across
 multiple CPUs for enhanced performance.
@@ -120,6 +124,9 @@ make check
 %systemd_postun_with_restart irqbalance.service
 
 %changelog
+* Tue Sep 30 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-5
+- Rebase to upstream commit (8e8945e509)
+
 * Wed May 14 2025 Tao Liu <ltao@redhat.com> - 2:1.9.4-4
 - Rebase to upstream commit (d913f60d84)
 

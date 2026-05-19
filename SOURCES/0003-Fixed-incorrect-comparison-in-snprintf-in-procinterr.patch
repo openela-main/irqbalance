@@ -1,0 +1,26 @@
+From 14fb83896e44d1efe03963658574204696051397 Mon Sep 17 00:00:00 2001
+From: Jiri BlueBear Dluhos <jiri.bluebear.dluhos@gmail.com>
+Date: Tue, 10 Jun 2025 11:00:14 +0200
+Subject: [PATCH 3/3] Fixed incorrect comparison in snprintf() in
+ procinterrupts.c.
+
+---
+ procinterrupts.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/procinterrupts.c b/procinterrupts.c
+index ab31cdb..ebfb762 100644
+--- a/procinterrupts.c
++++ b/procinterrupts.c
+@@ -69,7 +69,7 @@ static int check_platform_device(char *name, struct irq_info *info)
+ 		{NULL},
+ 	};
+ 
+-	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s/", name) == PATH_MAX) {
++	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s/", name) >= PATH_MAX) {
+ 		log(TO_ALL, LOG_WARNING, "WARNING: Platform device path in /sys exceeds PATH_MAX, cannot examine");
+ 		return -ENAMETOOLONG;
+ 	}
+-- 
+2.47.0
+
